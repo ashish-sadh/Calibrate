@@ -585,31 +585,10 @@ struct DashboardView: View {
 
     // MARK: - Behavior Insights Card
 
+    /// The card itself is `SharedUI/BehaviorInsightsCard` since #1130 — Android's
+    /// Today tab shows the same rows, and a shared view is the only way the two
+    /// stay the same card. Identical rendering here; only the ownership moved.
     private var insightsCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 6) {
-                Image(systemName: "lightbulb.fill")
-                    .font(.caption).foregroundStyle(Theme.fatYellow)
-                Text("Insights").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.textSecondary)
-                Spacer()
-            }
-            ForEach(viewModel.behaviorInsights) { insight in
-                HStack(alignment: .top, spacing: 8) {
-                    Image(systemName: insight.icon)
-                        .font(.caption)
-                        .foregroundStyle(insight.isPositive ? Theme.deficit : Theme.surplus)
-                        .frame(width: 20)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(insight.title)
-                            .font(.caption.weight(.semibold))
-                        Text(insight.detail)
-                            .font(.caption2)
-                            .foregroundStyle(Theme.textSecondary)
-                            .lineLimit(3)
-                    }
-                }
-            }
-        }
-        .card()
+        BehaviorInsightsCard(insights: viewModel.behaviorInsights)
     }
 }

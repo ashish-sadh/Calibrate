@@ -19,6 +19,11 @@ import DriftCore
 /// `static` so tier-1 tests can pin the priority + icon-mapping rules without
 /// instantiating the SwiftUI view, matching the same factory-then-render
 /// discipline as `TodayDonutView`.
+///
+/// Lives in `SharedUI/` since #1130: the card has no iOS-app-target dependency
+/// at all (`Theme` is shared; `BehaviorInsight`, `NudgeCoachSeed` and
+/// `.openDriftCoach` are DriftCore), so Android's Today tab renders this exact
+/// file instead of a re-creation of it.
 struct V6CoachingNudge: View {
     let payload: V6CoachingNudgePayload
     let onAskAI: () -> Void
@@ -36,9 +41,9 @@ struct V6CoachingNudge: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            Image(systemName: payload.icon)
-                .font(.system(size: Theme.FontSize.base, weight: .semibold))
-                .foregroundStyle(Theme.accent)
+            behaviorInsightGlyph(payload.icon, tint: Theme.accent,
+                                 font: .system(size: Theme.FontSize.base, weight: .semibold),
+                                 drawnSize: 18)
                 .frame(width: 36, height: 36)
                 .background(Theme.accent.opacity(0.12), in: Circle())
 
@@ -88,9 +93,109 @@ struct V6CoachingNudge: View {
             RoundedRectangle(cornerRadius: Theme.radiusControl)
                 .strokeBorder(Theme.separator, lineWidth: 0.5)
         )
+        // skip-fuse-ui ships accessibilityElement and dynamicTypeSize as
+        // @available(*, unavailable); Android reads the children separately and
+        // follows the system font scale without our upper clamp.
+        #if !os(Android)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(payload.accessibilityLabel)
         .dynamicTypeSize(...DynamicTypeSize.accessibility2)
+        #endif
+        // Text(_:) rather than the bare String: SkipUI only bridges the
+        // LocalizedStringKey and Text overloads, so a String *variable* fails to
+        // compile for Android. Same overload on iOS, so nothing changes there.
+        .accessibilityLabel(Text(payload.accessibilityLabel))
+    }
+}
+
+/// Renders a `BehaviorInsight.icon` — a raw SF Symbol name minted in DriftCore,
+/// never routed through `sym()` by its call sites.
+///
+/// On Android an unmapped name renders skip-ui's **warning triangle**, and
+/// `BehaviorInsight` emits ten names of which only two survive the map. Every
+/// one the service can produce is handled here (#1130): drawn Shapes where
+/// Material has no equivalent object, a same-meaning mapped glyph otherwise,
+/// and `sym()` for the rest so a *new* service icon shows a visible triangle
+/// rather than a silently wrong object (directive 0a).
+///
+/// `font` drives the Darwin path so iOS keeps its exact type-scaled symbol;
+/// `drawnSize` is the point size for the Android shapes, which have no font.
+@ViewBuilder
+func behaviorInsightGlyph(_ symbol: String, tint: Color, font: Font, drawnSize: CGFloat) -> some View {
+    #if os(Android)
+    switch symbol {
+    // fork.knife / chart.bar.fill: the two icons the live sim showed on a
+    // seeded account, and both were triangles. `chart.bar.xaxis` is NOT the
+    // fix — it only exists in skip-ui ≥1.59 and this build is pinned to 1.58
+    // (#1134), so it is unmapped too (see Symbols.swift).
+    case "fork.knife":
+        ForkKnifeShape().fill(tint).frame(width: drawnSize, height: drawnSize)
+    case "chart.bar.fill":
+        BarChartShape().fill(tint).frame(width: drawnSize, height: drawnSize)
+    case "moon.zzz.fill":
+        MoonStarsShape().fill(tint).frame(width: drawnSize, height: drawnSize)
+    case "pill.fill":
+        PillShape().fill(tint).frame(width: drawnSize, height: drawnSize)
+            .rotationEffect(.degrees(-45))
+    case "waveform.path.ecg":
+        EcgWaveShape().stroke(tint, style: StrokeStyle(lineWidth: max(1.4, drawnSize / 11),
+                                                       lineCap: .round, lineJoin: .round))
+            .frame(width: drawnSize, height: drawnSize)
+    // "pencil" IS mapped; the slash isn't expressible, and the card title
+    // ("Food logging paused") already carries the "stopped" half of the meaning.
+    case "pencil.slash":
+        Image(systemName: "pencil").font(font).foregroundStyle(tint)
+    // exclamationmark.triangle.fill falls through to sym() and stays a warning
+    // triangle — deliberate, and identical to iOS, which draws the same glyph
+    // accent-tinted for the protein-streak alert.
+    default:
+        Image(systemName: sym(symbol)).font(font).foregroundStyle(tint)
+    }
+    #else
+    Image(systemName: symbol).font(font).foregroundStyle(tint)
+    #endif
+}
+
+/// The dashboard's Behavior Insights list — a card of `BehaviorInsight` rows
+/// under a lightbulb header, goal-aware green/red per `isPositive`.
+///
+/// Extracted from `DashboardView.insightsCard` into `SharedUI/` by #1130 so the
+/// Android Today tab renders the same rows rather than a second copy that can
+/// drift. iOS rendering is unchanged.
+struct BehaviorInsightsCard: View {
+    let insights: [BehaviorInsight]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 6) {
+                // Material's mapped set has no lightbulb of any kind, so the
+                // header glyph is drawn (LightbulbShape) on Android.
+                #if os(Android)
+                LightbulbShape().fill(Theme.fatYellow).frame(width: 13, height: 13)
+                #else
+                Image(systemName: "lightbulb.fill")
+                    .font(.caption).foregroundStyle(Theme.fatYellow)
+                #endif
+                Text("Insights").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.textSecondary)
+                Spacer()
+            }
+            ForEach(insights, id: \.id) { insight in
+                HStack(alignment: .top, spacing: 8) {
+                    behaviorInsightGlyph(insight.icon,
+                                         tint: insight.isPositive ? Theme.deficit : Theme.surplus,
+                                         font: .caption, drawnSize: 13)
+                        .frame(width: 20)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(insight.title)
+                            .font(.caption.weight(.semibold))
+                        Text(insight.detail)
+                            .font(.caption2)
+                            .foregroundStyle(Theme.textSecondary)
+                            .lineLimit(3)
+                    }
+                }
+            }
+        }
+        .card()
     }
 }
 
@@ -155,7 +260,9 @@ extension V6CoachingNudge {
     }
 }
 
-#if DEBUG
+// The #Preview macro exists in neither the Android Swift build nor Skip's
+// Darwin bridging pass, so previews are iOS-app-only in SharedUI files.
+#if DEBUG && DRIFT_IOS_APP
 #Preview("V6CoachingNudge with AI") {
     V6CoachingNudge(
         payload: V6CoachingNudgePayload(

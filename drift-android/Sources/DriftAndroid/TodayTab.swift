@@ -57,6 +57,15 @@ struct TotalsRow: Sendable {
     var weekWorkouts = 0
     var streak = 0
 
+    // MARK: - Coaching surfaces (#1130)
+    //
+    // iOS renders only the topmost-priority alert as the nudge card and the
+    // whole insight list below the stat trio (DashboardView:238-252, :281-284).
+    // Both services are DB-backed, so they resolve here in `reload()` — never
+    // in a body (directive 0e).
+    var proactiveAlerts: [BehaviorInsight] = []
+    var behaviorInsights: [BehaviorInsight] = []
+
     // MARK: - Daily Average (energy balance) inputs
     //
     // iOS computes all of this inside `DashboardView.tdeeCard`'s body. On Fuse a
@@ -137,7 +146,28 @@ struct TotalsRow: Sendable {
             // by accident of weeks:1 returning a single element — see #1076).
             weekWorkouts = (try? WorkoutService.weeklyWorkoutCounts(weeks: 1))?.last?.count ?? 0
             streak = (try? WorkoutService.workoutStreak())?.current ?? 0
+            // Last, and in this order, because both walk the food/weight/workout
+            // history: the rings and meal list are what the user is waiting for,
+            // and the coaching cards sit far enough down the scroll that landing
+            // a frame later is invisible.
+            //
+            // `recentAppleWorkouts` / `sleepHistory` stay at their empty
+            // defaults until the Health Connect seam (#1070) — the sleep and
+            // Apple-workout detectors simply don't fire, which is the honest
+            // Android answer rather than a fabricated one.
+            proactiveAlerts = BehaviorInsightService.computeProactiveAlerts()
+            behaviorInsights = BehaviorInsightService.computeInsights()
         }
+    }
+
+    /// Mirrors iOS `DashboardViewModel.dismissProactiveAlert` (:40-43): persist
+    /// the 24h dismissal, then drop the card in place. Deliberately NOT a
+    /// `reload()` — iOS doesn't recompute either, and the alert's own guard
+    /// (`Preferences.alertDismissedUntil`) keeps it gone on the next real load,
+    /// including after an app kill (durable KV since #1108).
+    func dismissProactiveAlert(key: String) {
+        Preferences.setAlertDismissedUntil(key: key, until: Date().timeIntervalSince1970 + 86400)
+        proactiveAlerts.removeAll { $0.dismissKey == key }
     }
 
     /// Mirrors `DashboardViewModel.loadData()` lines 110-130 — the inputs iOS's
@@ -209,6 +239,12 @@ struct TodayTab: View {
     @State var showingDescribe = false
     @State var showDeficitExplainer = false
     @State var foodLogVM = FoodLogViewModel()
+    // The nudge's "Ask AI" seeds Drift Coach with the card's own text. iOS does
+    // it by posting `.openDriftCoach` for ContentView to observe; skip-fuse-ui
+    // has no `.onReceive` at all (no Combine publisher bridge), so Today owns
+    // this presentation directly instead.
+    @State var showingCoach = false
+    @State var coachPrefill = ""
 
     var body: some View {
         NavigationStack {
@@ -257,6 +293,14 @@ struct TodayTab: View {
                     mealsCard
 
                     statTrio
+
+                    // iOS puts the coaching nudge immediately after the body-
+                    // summary trio and the Insights section last on the tab
+                    // (DashboardView:228-284); this keeps both adjacencies
+                    // against Android's own card order.
+                    nudgeCard
+
+                    insightsSection
                 }
                 .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 100)
             }
@@ -281,6 +325,53 @@ struct TodayTab: View {
             .sheet(isPresented: $showingRecent, onDismiss: { store.reload() }) {
                 AndroidRecentMealsSheet(viewModel: foodLogVM)
             }
+            .sheet(isPresented: $showingCoach) {
+                AIChatView(prefill: coachPrefill, autoSubmit: !coachPrefill.isEmpty)
+            }
+        }
+    }
+
+    // MARK: - Coaching nudge + insights (#1130)
+
+    /// The iOS card itself — `V6CoachingNudge` moved into SharedUI so there is
+    /// one nudge, not two. Only the topmost alert renders, matching
+    /// `DashboardView:238`.
+    @ViewBuilder
+    private var nudgeCard: some View {
+        if let payload = V6CoachingNudge.payload(from: store.proactiveAlerts,
+                                                 aiEnabled: Preferences.aiEnabled) {
+            V6CoachingNudge(
+                payload: payload,
+                // iOS routes Ask AI through `.openDriftCoach` (V6CoachingNudge
+                // .askAI) for ContentView to pick up; the same seed text goes
+                // straight into this tab's own sheet here, because SkipUI has
+                // no notification observer to receive it.
+                onAskAI: {
+                    coachPrefill = NudgeCoachSeed.prompt(title: payload.title, detail: payload.detail)
+                    showingCoach = true
+                },
+                onDismiss: payload.dismissKey.map { key in
+                    { withAnimation { store.dismissProactiveAlert(key: key) } }
+                }
+            )
+        }
+    }
+
+    /// iOS renders an uppercase "INSIGHTS" section header above the card
+    /// (`DashboardView.sectionHeader`, :281-284). That treatment is caption /
+    /// tertiary, a step larger and quieter than Today's own `sectionHeading()`
+    /// (caption2 / secondary) — copied literally rather than approximated, so
+    /// the two screens read the same.
+    @ViewBuilder
+    private var insightsSection: some View {
+        if !store.behaviorInsights.isEmpty {
+            Text("INSIGHTS")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Theme.textTertiary)
+                .tracking(0.8)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.top, 4)
+            BehaviorInsightsCard(insights: store.behaviorInsights)
         }
     }
 

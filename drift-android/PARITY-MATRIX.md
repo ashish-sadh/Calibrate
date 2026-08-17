@@ -7,8 +7,12 @@ Issue column: the GitHub issue tracking the gap (blank when ok/unknown).
 Structural ground truth: Android hosts SharedUI single-source files for
 **Workout** (WorkoutTab → WorkoutView) and **Food** (FoodTab → FoodTabView);
 **Today / Body / More** are still Android-only re-creations (TodayTab.swift,
-WeightTab.swift, MoreTab.swift). Capture + Coach + health sub-screens are
-not ported at all. **Sharing / Social** hosts ~4.6k ln of SharedUI single-source
+WeightTab.swift, MoreTab.swift) — though Today now hosts two SharedUI
+single-source components inside its re-creation (`MealTimelineSection`,
+`V6CoachingNudge`). Capture + health sub-screens are not ported at all.
+*(Corrected scout #23, 2026-08-17: this header also said **Coach** was "not
+ported at all" — it is. `AIChatView` is SharedUI single-source, reached from
+the floating `ChatIconButton`, and scouts #19 and #21 both drove it on device.)* **Sharing / Social** hosts ~4.6k ln of SharedUI single-source
 and ships in the APK. *(Corrected scout #18, 2026-08-04: this header previously
 said Sharing was "100% non-functional — sign-in parks on the URLSession bridge
 (#1194, P0)". **#1194 is CLOSED** — `SyncClient.swift:40` now defaults to
@@ -18,6 +22,57 @@ on-device. Sharing rows are `unknown` = **untested**, not unreachable; #1197
 is the verification pass.)*
 
 ## Session notes (append-only)
+
+- **2026-08-17 (scout #23, Opus 5):** **TODAY TAB** — taken over the rotation's "Body/Weight again" because that section's remaining dark rows (DEXA, progress
+  photos) are all `missing` with seven scoped issues already filed against them (#1185–#1191, #1166), so a sweep there would have re-confirmed known gaps rather
+  than found new ones; Today was the front door carrying 19 `deviation` + 16 `missing` rows, source-enumerated 07-28 and re-verified source-only on 08-04 by a
+  scout who wrote "8th consecutive scout with no device access". **The headline is not any single bug — it is that the iPhone simulator finally has a build
+  installed** (`516EAAC8…`, iOS 26.4, Drift **380**, installed 2026-08-10 22:54). Four consecutive scouts recorded "no iPhone build installed" as the standing
+  debt to `0-SCREENSHOT-EXACT-IS-THE-BAR`; this is the first session in the program that could satisfy that directive literally, and every iOS claim below is
+  screenshot-backed rather than source-derived. The emulator was safe to take on a reusable check: `git log --since=2026-08-11 -- drift-android/ SharedUI/
+  DriftCore/` returned exactly two commits, a test fix and a food-CSV export fix, so installed build 92 was UI-equivalent to HEAD for this whole section;
+  `versionCode=92` and `lastUpdateTime=2026-08-11 06:30:38` were **unchanged from first screenshot to last**, so unlike scouts #20/#21 nothing was reinstalled
+  underneath the drive, and `logcat -b crash` stayed empty for `com.drift.health` across 5 background/foreground cycles, 6 cold launches and every tab
+  round-trip. **The board was aiming three lanes at dead tickets: four of the issues this section pointed at are CLOSED** (#1131, #1201, #1129, #1213) and two of
+  them own features that visibly ship. `bdf9e48f` moved `MealTimelineSection` into `SharedUI/` and pointed both platforms at it, so the ten "Meal timeline …
+  missing #1131" rows describe an Android flat-list re-creation that no longer exists — tap-to-expand, in-row Remove, the header "+" (driven: opens Add Food),
+  earliest-first order and iOS's empty-state copy are all present, and the delete path is byte-equivalent to iOS's. #1130's nudge + INSIGHTS are **in flight, not shipped** — see the contamination note below. #1213's `gain 95.6 lbs` now reads `Target: eat 2340 kcal/day to lose 6.8 lbs`, correct against the device's own stored 81.1 → 78.0 kg.
+  **Two new issues. #1225 (P1)** is the one a side-by-side makes obvious and source alone had missed for three sweeps: `dailyAverageCard` sits at body slot 4
+  (`TodayTab.swift:282`) where iOS puts `tdeeCard` **twelfth** (`DashboardView.swift:259`, after the goal card). That single 528px card above the social pill
+  pushes **all four log-method chips and the entire TODAY'S MEALS card off the first paint** — on Android you must scroll before any logging entry point is
+  reachable, where iOS shows the four chips, the meals card *and* the stat trio unscrolled. The issue states its own confound honestly: the iOS sim has no weight
+  goal so its hero renders the short no-goal fallback, and the claim that survives that is structural — subtract the hoisted card's 542px and Android's chips
+  land at px ~1560 and its meals card at ~1960, both above the px-2170 fold. **#1226 (P1)** is an unowned miss against the operator's own number: cold start
+  measured **5583 / 5777 / 4825 / 4188 / 4325 ms** (five `am force-stop` → `am start -W` runs, all `LaunchState: COLD`) against directive 0-PERF-P0's *"cold
+  start < 2.5s on emulator"*, on a machine the directive itself calls faster than the Pixel 2 baseline. This is not the untrustworthy metric — 0-EMULATOR-GPU-
+  CAVEAT(a) names cold start as trustworthy, unlike SwiftShader framestats — and it has had no owner since #1073/#1074 closed (#1202 covers per-reload
+  redundancy, not launch). Filed as the measurement with an explicit "profile first, do not guess" Done-When. **THE LESSON OF THIS SESSION IS A METHOD FAILURE, AND IT IS WORTH MORE THAN THE FINDINGS: I checked
+  `versionCode`/`lastUpdateTime` before driving (92) and again at 08:56 (still 92), and the executor installed BUILD 93 — cut from its own uncommitted #1130 work
+  — at 08:59:17, between that check and the rest of the sweep.** [[harness_parity_lanes_share_one_emulator]] says to pgrep for a live executor before driving; it
+  does not say the thing that actually bit me, which is that **the check has to be repeated at the END of the drive, not just the start**, because the install
+  lands silently and every screenshot after it is of different code. On the strength of post-09:00 screenshots I filed a comment on #1130 saying the feature had
+  shipped, that its `planned` label was dangerous, that its warning-triangle glyph was verified clean, and that the nudge was nondeterministic across launches.
+  **All four claims were false and I retracted them in the same session.** The nudge and Insights do not exist at HEAD — `git show HEAD:…/TodayTab.swift` ends its
+  body at `statTrio` — so the "absent" launches were simply build 92 without the feature and the "present" ones were build 93 with it; the file I cited for the
+  glyph (`SharedUI/V6CoachingNudge.swift`) is uncommitted too; and the one difference that *was* within a single build ("Only 6% of days logged" at 09:00–09:01 vs
+  "14-day logging streak" at 09:02–09:04) is untrustworthy because the executor was driving and plausibly seeding food rows at exactly that moment. Telling three
+  lanes to close a live ticket would have been the most expensive thing this sweep could do, which is why the retraction went up immediately rather than at the end.
+  The two filed issues were re-checked against `git show HEAD:` and both hold — #1225's citation was 36 lines high (`dailyAverageCard` is **:246** at HEAD, not
+  :282) and got a correction comment; #1226 spans builds 92 and 93 and got a provenance table. Rows changed: **28** (14 corrected off stale/closed tickets, 10
+  added, 4 flipped to `ok` on device evidence), of which **4 were then corrected again** once the build swap surfaced. **One tempting lead was run down and recorded CLEAN so the next scout doesn't spend a session on it:** the social pill's
+  **single-person** icon is `Symbols.swift:89` (committed) falling `person.2.fill` to the closest mapped glyph because skip-ui maps no two-person symbol at all —
+  directive-0a-correct, do not "fix". (The protein nudge's warning triangle *looks* like the same kind of cleared lead and I initially recorded it as one, but its
+  justification lives in uncommitted code and is #1130's verifier's call, not the scout's — that row is back to `unknown`.) Also verified working and recorded so nobody re-tests: intake-card tap → Food tab, social pill → Friends push, Daily Average **(i)** → inline
+  explainer, meals "+" → Add Food sheet, stat-trio routing, and no pull-to-refresh on Android where iOS has `.refreshable` (`DashboardView.swift:360`). No code
+  touched (matrix only). **Residuals:** I did not log or delete a food entry, by choice — the meal row's expand/Remove interactions are the newest ported code and
+  genuinely unverified with real rows, but writing to a DB three lanes share is exactly how #1213's phantom `34.64 kg` got into a sibling lane's screenshots
+  ([[harness_shared_emulator_test_writes_poison_state]]); those rows are marked `ok` on shared-component provenance, not on a driven row. The **goal-mode**
+  nutrition hero is still uncompared — iOS's sim has no weight goal so `TodayDonutView` never rendered against Android's ring re-creation, and setting one would
+  mutate the reference device. And one iOS-side oddity worth an operator's eye rather than a ticket: the iPhone build opens its Food tab on **Tue Aug 11** with
+  today (Mon Aug 17) not even in the visible date strip, while Android correctly opens on today. Rotation next: **Today again, once #1130 commits** — the goal-mode hero comparison and the meal-row
+  interactions with real entries are one seeded session's work, and the nudge/Insights rows need re-verifying against committed code rather than a lane's WIP;
+  then More/Settings, which carries 45 `missing` rows and the operator's 0-EVERY-SCREEN mandate. **Standing instruction to the next scout: capture
+  `versionCode` + `lastUpdateTime` immediately before AND immediately after every drive, and treat any screenshot taken across a change in either as unusable.**
 
 - **2026-08-11 (scout #22, Opus 5):** **BODY / WEIGHT** — picked over the rotation's "Sharing again" because scout #21 left that section blocked on #1197's
   fixture rows (no connections on the emulator identity, so six surfaces are unreachable until someone INSERTs them), while Body/Weight was the largest
@@ -1054,7 +1109,7 @@ silently drop any ([[feedback_android_full_parity]]). Everything here is `#1138`
 | MealReviewSheet / PhotoLogReviewView | editable review — every photo/capture logging path funnels through it on iOS | missing | #1063 |
 | VoiceLogSheet (471) | voice food logging: Describe -> Listening… -> "Understanding what you ate…" -> "Couldn't hear that"/Try again -> review; mic dictate button | missing | #1063 (speech seam #1178) |
 
-## Today (epic #1061 = INDEX · Android-only re-creation: TodayTab.swift 410 ln vs iOS DashboardView.swift + DashboardView+Cards.swift · scoped ports #1129–#1132)
+## Today (epic #1061 = INDEX · Android-only re-creation: TodayTab.swift **665 ln** vs iOS DashboardView.swift + DashboardView+Cards.swift · **#1129 #1131 #1201 #1213 all CLOSED**; live scoped issues: **#1225 card order/fold · #1226 cold start · #1202 reload discipline [absorbs #1203] · #1130 nudge+Insights content nondeterminism (feature itself SHIPPED) · #1075 skeletons · #1116/#1114/#1094 banners · #1117 goal card · #1132 consistency card · #1070 health-seam columns** · `mealsCard` now hosts the SharedUI single-source `MealTimelineSection`)
 
 Source-enumerated 2026-07-28 (scout #7): full iOS→Android structural diff, no emulator
 (both sibling lanes live). Rows ordered top→bottom matching iOS `DashboardView.body`.
@@ -1072,11 +1127,21 @@ Two rows were misrouted to blocked seam epics that can't fix them (WEIGHT column
 New this pass: a SPEED block (#1202) and the meal-list ordering defect (#1201) — the Today
 section had never carried a single perf row despite operator directive 0-PERF-P0.
 
+**DEVICE-VERIFIED BOTH PLATFORMS 2026-08-11→17 (scout #23), Android build 92 + iPhone 17 Pro
+build 380 — the first true side-by-side in the program.** Fourteen rows were stale and four
+of the issues they pointed at were **CLOSED** (#1131, #1201, #1129, #1213), i.e. the board was
+aiming the executor at dead tickets and at two features that already ship (meal card,
+nudge+Insights). New this pass: the card-order/fold defect (#1225), an unowned cold-start
+miss against directive 0-PERF-P0 (#1226), and a nudge/Insights content nondeterminism logged
+on #1130. Two tempting leads were run down and recorded CLEAN so nobody re-chases them: the
+nudge's warning triangle and the single-person social-pill glyph are both deliberate,
+documented, directive-0a-correct fallbacks.
+
 | screen | sub-interaction | status | issue |
 |---|---|---|---|
 | Chrome | brand header: iOS = `BrandMark` **asset** in the **nav toolbar** (principal); Android draws a "D" **circle IN scroll content** — wrong element AND wrong placement | deviation | #1121/dir-8 |
 | Chrome | privacy banner — Android `lock.fill` vs iOS `lock.shield.fill`; Android adds a trailing Spacer (iOS is leading-aligned) | deviation | #1061 |
-| Chrome | pull-to-refresh (`.refreshable`) — Android TodayTab has none | deviation | #1061 |
+| Chrome | pull-to-refresh — iOS has `.refreshable { await viewModel.loadToday() }` (`DashboardView.swift:360`); Android has none. **Device-verified scout #23**: pulling down at the top of the Today tab produces no spinner and no overscroll affordance | deviation | #1061 |
 | Chrome | 180s auto-refresh poll — Android reloads on `.foodEntryAdded` + onAppear instead. The *substitution* is still an acceptable interim, but see the SPEED rows below: the onAppear half is unthrottled. | deviation | #1202 |
 | **Speed** | **no reload throttle.** iOS skips `loadToday()` when data is <30s fresh (`DashboardView.swift:346-352`) and DELETED its duplicate `.onAppear` load on purpose ("the duplicate here raced it on each tab switch (perf 2026-07-09)", `:336-341`). Android has no `lastFullLoadAt` equivalent — `.onAppear { store.reload() }` (`TodayTab.swift:170`) fires unconditionally on every entry to the tab, on top of `init()` (`:47`) and the `.foodEntryAdded` observer (`:53-55`). Directly on operator directive 0-PERF-P0. | deviation | #1202 |
 | **Speed** | **500 workouts fetched TWICE per reload.** `weeklyWorkoutCounts(weeks: 1)` and `workoutStreak()` are called back-to-back (`TodayTab.swift:106-107`); `workoutStreak()` is itself `weeklyWorkoutCounts(weeks: 52)` (`WorkoutService.swift:663-666`) and both funnel into `fetchWorkouts(limit: 500)` (`:638-639` → `:278-282`). No caching between them. Every hop crosses JNI. | deviation | #1202 |
@@ -1093,30 +1158,40 @@ section had never carried a single perf row despite operator directive 0-PERF-P0
 | Log methods | Recent chip glyph: iOS `clock`, Android `clock.arrow.circlepath` — different Material mapping. Cosmetic; not filed separately. | deviation | #1121 |
 | Log methods | **Snap chip**: opens `SnapMealSheet` (#1111) — Take Photo (`CameraCaptureFacade`/`CameraCaptureService`) + Choose from Library (`DriftPlatform.imagePicker`, #1128) both capture correctly; the cloud vision round-trip COMPLETES since #1177 closed (`861411f8`, build 81) — a real thali returns 7 separated dishes with macros and logs to the diary. Error+Retry verified (graceful, no crash); a foodless photo now says "couldn't spot any food" instead of blaming the network (#1195). No longer opens Coach chat (that misrouted placeholder is gone). | ok | #1111 |
 | Log methods | Describe / Search / Recent chips wired (was `broken` #1093, now CLOSED) → DescribeMealSheet / AndroidFoodSearchSheet / AndroidRecentMealsSheet | ok | #1093 (closed) |
-| Meal timeline | **CORRECTED scout #17 — the old row (and #1131's Done-When) said "dot-rail"; iOS DELETED the rail in the 2026-05-24 density pass** (`MealTimelineSection.swift:34-42`: "the gutter was visual noise that didn't earn its space"). iOS is now ONE bounded card + hairline `Divider`s (`:43-58`). Android's flat list is therefore CLOSER to iOS than previously recorded; residual = card wrapper + dividers + row typography. Building a rail would create a new deviation. | deviation | #1131 (rescoped) |
-| Meal timeline | **row order is REVERSED vs iPhone.** `AppDatabase.fetchFoodEntries(for:)` is `ORDER BY fe.logged_at DESC` (`AppDatabase.swift:304`); iOS re-sorts **ascending** (`MealTimelineSection.swift:370-379`, "so the earliest meal sits at the top"); Android renders the raw DESC (`TodayTab.swift:88-98`). Breakfast lands at opposite ends of the card on the two platforms. One-line fix. | deviation | #1201 |
-| Meal timeline | **tap-to-expand detail** — iOS row toggles portion chip + P/C/F(+Fiber >0.5g) macro chips (`MealTimelineSection.swift:132-221`); Android rows are inert `HStack`s, not Buttons (`TodayTab.swift:363-385`) | missing | #1131 |
-| Meal timeline | **in-row Remove button** (operator 2026-08-03 "when I expand add a way to remove from dashboard itself", commit 3b0946cb, `:182-211`) — Android none. Must be a SIBLING of the toggle Button, not nested in its label (`:135-137`) or the tap is swallowed. | missing | #1131 |
-| Meal timeline | swipe-to-delete — iOS hand-rolls `SwipeToDeleteContainer` + `DragGesture` (`:250-316`) precisely because `.swipeActions` is List-only; Android none. Follow-on to the Remove button, not a gate. | missing | #1131 |
-| Meal timeline | header **"+"** add button (`:64-89`, `meal-timeline-add`) — Android header is text only (`TodayTab.swift:346`) | missing | #1131 |
-| Meal timeline | empty-state copy: iOS "try the **Snap** card above" (`:24`, pinned by #821 Done-When 2); Android "try the **Search** chip above" (`TodayTab.swift:353`) | deviation | #1131 |
-| Meal timeline | row content: iOS = `time · name · kcal` (+separate "kcal" unit label, time `minWidth 56`); Android = `time · (name/detail) · mealType pill` — Android adds a meal-type pill iOS doesn't show and folds servings+kcal into a subtitle | deviation | #1131 |
-| Meal timeline | kcal math — Android `Int(e.calories * e.servings)` (`TodayTab.swift:95`) == iOS `entry.totalCalories` (`FoodEntry.swift:104`). **Verified equal, no bug.** | ok | — |
+| Meal timeline | **PORTED TO THE SHARED iOS COMPONENT — the ten rows this block used to carry are obsolete.** `bdf9e48f` (in build 92) moved `MealTimelineSection.swift` into `SharedUI/` and points both `DashboardView` (`:194`) and Android's `mealsCard` (`TodayTab.swift:293`) at it, deleting the Android flat-list re-creation. **#1131 and #1201 are both CLOSED.** Rows below are device-verified scout #23 against that shared component | ok | #1131 (closed) |
+| Meal timeline | row order earliest-first (`rows(from:)` sorts ascending on both platforms) — was the #1201 defect | ok | #1201 (closed) |
+| Meal timeline | tap-to-expand portion + P/C/F(+Fiber) macro chips — shared component, both platforms | ok | #1131 (closed) |
+| Meal timeline | in-row **Remove** — shared component; both platforms call `AppDatabase.shared.deleteFoodEntry(id:)` then reload (`DashboardView.swift:203-206` == `TodayTab.swift:294-297`), byte-equivalent delete path | ok | #1131 (closed) |
+| Meal timeline | header **"+"** — **device-verified scout #23**: opens the Add Food search sheet. iOS posts `.openLogMeal(mode: .search)` → `LogMealSheet`'s segmented Recent/Search/Describe host; Android opens `AndroidFoodSearchSheet` (search-only, "Done" dismiss at LEADING edge). Same intent, different host — that host gap is #1198's scope, not a new row | deviation | #1198 |
+| Meal timeline | empty-state copy — **device-verified identical**: both read "Log your first meal — try the **Snap** card above". Android's glyph is a bare fork+knife where iOS draws it inside a circle outline (Android-gated in the shared file: `fork.knife` is unmapped and would render a triangle) | ok | — |
+| Meal timeline | row content — the meal-type pill iOS never showed is gone with the re-creation; rows are `time · name · kcal` on both | ok | #1131 (closed) |
+| Meal timeline | swipe-to-delete — still Android-gated OFF **deliberately** (`DragGesture` vs Compose scroll is an unproven runtime interaction, and in-row Remove already covers deletion). iOS keeps its hand-rolled `SwipeToDeleteContainer` | deviation (by design) | — |
+| Meal timeline | kcal math — Android `Int(e.calories * e.servings)` == iOS `entry.totalCalories`. **Verified equal, no bug.** | ok | — |
 | Meal timeline | skeleton while loading (`SkeletonMealTimelineSection`) — Android none | deviation | #1075 |
 | Body summary row | **SPLIT scout #17 — the old row filed all three columns under #1070, hiding a portable-now fix behind a seam.** SLEEP + READINESS are genuinely HealthKit-sourced and correctly hidden ([[android_hide_unwired_integration_ui]]); Android substitutes WORKOUTS / STREAK (DriftCore). That half stays #1070. | missing | #1070 |
 | Body summary row | **WEIGHT column needs NO health seam and is broken parity today**: iOS shows a `%+.2f unit/wk` rate line + **goal-aware value color** (green aligned / red against / neutral ink when no goal) — `BodySummaryCardsRow.swift:162-196`, `goalAlignedColor :246-263`. Android passes fixed `Theme.accent` and renders the value in `Theme.textPrimary` unconditionally (`TodayTab.swift:396`, `:412-414`), with no rate at all. Violates design tenet #3 (goal-aware color, never "good/bad"). Both inputs already run on Android — `TodayTab.swift:74` already calls `WeightTrendService.shared.trendWeight`, and `weeklyRate` is its sibling property (`WeightTrendService.swift:26`). | deviation | #1203 |
-| Coaching nudge | iOS `V6CoachingNudge` (topmost proactiveAlert, Ask-AI pill, 24h dismiss; `BehaviorInsightService` = DriftCore) — Android none | missing | #1130 |
-| Behavior insights | iOS `insightsCard` (BehaviorInsight list under "Insights") — Android none | missing | #1130 |
+| Coaching nudge | iOS `V6CoachingNudge` (topmost proactiveAlert, Ask-AI pill, 24h dismiss; `BehaviorInsightService` = DriftCore) — **not at HEAD**: `TodayTab.swift` body ends at `statTrio` (:259). **IN FLIGHT scout #23**: the executor installed build 93 from its uncommitted #1130 work at 08:59:17 and the nudge renders there (title, detail, working Ask-AI pill, × dismiss, iOS's after-the-trio adjacency). Do not mark shipped until it commits | missing (in flight) | #1130 |
+| Behavior insights | iOS `insightsCard` (BehaviorInsight list under "Insights") — **not at HEAD**. **IN FLIGHT scout #23**: renders in the executor's build 93 (INSIGHTS header + lightbulb card + multiple rows, last on the tab). Do not mark shipped until it commits | missing (in flight) | #1130 |
 | Goal progress | iOS `goalCard` (`GoalProgressCard` → GoalView) / empty "No weight goal set" — Android none (statTrio has WEIGHT value only, no progress card) | missing | #1117 |
-| Daily Average (TDEE) | ~~Android none~~ — **ROW WAS STALE, corrected scout #20 by screenshot**: the card SHIPS (`TodayTab.swift:455-480`) and renders eating / deficit-ring / burning + the target line + a Weight pill. #1129 should be re-scoped to whatever is still missing (source pills, explainer → AlgorithmSettings) or closed, not re-ported | deviation (partial port, not missing) | #1129 (re-scope) |
-| Daily Average (TDEE) | **target line prints the wrong goal DIRECTION and magnitude**: rendered `Target: eat 2349 kcal/day to **gain 95.6 lbs**` where the device's own stored data (latest 81.1 kg, target 78.0 kg, start 82.5 kg) gives `lose 6.8 lbs`. Coach `weight_info` prints the same wrong `gain 95.6 … 100% done` (correct: 31%), so the bad value is a shared input, not two formatting bugs — solving backwards pins `currentWeightKg ≈ 34.64 kg`, which matches **no row** in `weight_entry` (range 80.94–82.56). Android call site `TodayTab.swift:176-179` mirrors iOS `DashboardView+Cards.swift:104-106` correctly | broken | **#1213 (P0)** |
-| Daily Average (TDEE) | iOS-scope unresolved for #1213: `ToolRegistration.swift:561-565` is shared, so this may reproduce on iOS. **No iPhone build is installed on the simulator** and building one races the executor's daemons — the side-by-side is still owed | unknown | #1213 |
+| Daily Average (TDEE) | ~~Android none~~ — **ROW WAS STALE, corrected scout #20 by screenshot**: the card SHIPS (`TodayTab.swift:390-480`) and renders eating / deficit-ring / burning + the target line + a Weight pill. #1129 is **CLOSED**; residual = iOS's second source pill ("Apple Health", device-confirmed present on iOS scout #23) and the explainer→AlgorithmSettings route (`TodayTab.swift:387-389` documents the card deliberately doesn't navigate until #1118 lands) | deviation | #1118 (route) / #1070 (2nd pill) |
+| Daily Average (TDEE) | ~~target line prints the wrong goal DIRECTION and magnitude (`gain 95.6 lbs`)~~ — **FIXED, device-verified scout #23**: build 92 renders `Target: eat 2340 kcal/day to **lose 6.8 lbs**` against stored latest 81.1 kg / target 78.0 kg. **#1213 is CLOSED** | ok | #1213 (closed) |
+| Daily Average (TDEE) | ~~iOS side-by-side owed; no iPhone build installed~~ — **DEBT CLEARED scout #23, 2026-08-17: the iPhone 17 Pro simulator (516EAAC8, iOS 26.4) now has Drift build 380 installed** and was driven this session. Four scouts had recorded this as blocking `0-SCREENSHOT-EXACT-IS-THE-BAR`; iOS-side claims can now be screenshot-backed. Capture with `xcrun simctl io 516EAAC8-… screenshot`, tap via mobile-mcp (points = px/3) | ok | — |
 | Activity section | iOS "Activity" header + `healthRow` (Active cal / Steps → Exercise tab) — Android hides (HealthKit seam) | missing | #1070 |
 | Activity | iOS Apple-Health `workoutCard` (burned N cal, ≤3 workouts) when today workouts exist — Android none (HealthKit seam) | missing | #1070 |
 | Activity | iOS `WorkoutConsistencyCard` (weekly, 24h dismiss; `BehaviorInsightService.workoutConsistencyVariant` + WorkoutService = DriftCore, NOT health-gated) — Android none | missing | #1132 |
 | Recovery section | iOS "Recovery" header + `sleepRecoveryCard` (Recovery/Sleep scores, HRV/RHR, → SleepRecoveryView) / empty "Body Rhythm" — Android none (sleep/HRV/RHR = HealthKit seam) | missing | #1070/#1061 |
 | Recovery | iOS `supplementCard` (N/M taken → SupplementsTabView) when supplements configured — Android none (Supplements TAB is ported #1068; dashboard entry not) | missing | #1061 |
 | Coach entry | floating `ChatIconButton` → AIChatView — PORTED (AppShell.swift + ContentView.swift), matches iOS single AI access point | ok | #1066 |
+| **Card order** | **`dailyAverageCard` sits at body slot 4 (`TodayTab.swift:246` at HEAD) where iOS puts `tdeeCard` 12th (`DashboardView.swift:259`, after `goalCard`).** That one 528px card (+14px spacing) above the social pill pushes the four log-method chips AND the whole TODAY'S MEALS card off the first paint — on Android you must scroll to reach any logging entry point; on iOS all four chips, the meals card and the stat trio are visible unscrolled. Relative order *below* the hoist is correct. | deviation | **#1225 (P1)** |
+| **Speed** | **cold start 4.2–5.8s** (5 runs, `am force-stop` → `am start -W`: 5583/5777/4825/4188 ms on build 92 + 4325 ms on build 93, all `LaunchState: COLD` — the executor reinstalled mid-sweep, so re-baseline on one build) against operator directive 0-PERF-P0's **< 2.5s** emulator exit criterion — and the emulator is *faster* than the Pixel 2 baseline. Cold start is a trustworthy metric per 0-EMULATOR-GPU-CAVEAT(a) (unlike SwiftShader framestats). Unowned: #1073/#1074 closed, #1202 covers per-reload redundancy only. | broken | **#1226 (P1)** |
+| Coaching nudge + Insights | ~~nondeterministic across launches~~ — **RETRACTED by scout #23 in the same session.** The "absent" launches were build 92 (feature genuinely absent) and the "present" ones build 93 (executor's WIP, installed 08:59:17 mid-sweep); a residual two-variant difference *within* build 93 is untrustworthy because that lane was driving and plausibly seeding food rows at the time. **No finding here.** Recorded only so the next scout doesn't re-derive it from the same contaminated screenshots — and as the standing lesson: re-check `lastUpdateTime` at the END of a drive, not just the start | — | — |
+| Coaching nudge | glyph — the protein alert draws a **red warning triangle**, which reads like a directive-0a violation. **NOT verified clean — do not cite scout #23 for this.** The reasoning I checked (`exclamationmark.triangle.fill` falls through `sym()` deliberately *because iOS draws the identical glyph*) lives in the executor's **uncommitted** `SharedUI/V6CoachingNudge.swift`; `Drift/Views/Shared/V6CoachingNudge.swift` at HEAD has no `behaviorInsightGlyph` at all. It is #1130's verifier's call, not the scout's | unknown | #1130 |
+| Social pill | glyph — iOS `person.2.fill` (two people), Android renders a single person. **VERIFIED CLEAN, do not chase:** `Symbols.swift:86-89` records that skip-ui maps no two-person glyph at all (person.2/person.3/group/people all absent) and falls to `person.crop.circle.fill` per directive 0a (closest same-meaning glyph, never the triangle). | ok | — |
+| Social pill | tap → pushes `SharingView` onto the Today NavigationStack (Friends screen, identity card, search, privacy footnote). **Device-verified scout #23.** | ok | — |
+| Nutrition hero | tap → Food tab (`TodayTab.swift:293` `Button { selectedTab = .food }` == iOS `DashboardView.swift:172` `Button { selectedTab = 2 }`). **Device-verified scout #23** — lands on Food with the day strip on today. | ok | — |
+| Daily Average (TDEE) | info **(i)** → inline explainer expands (`Required −210 / Current −210 kcal/day`, `Trend: -0.42 lbs/wk → -210 kcal/day`, `Based on 21-day weight trend.`), animated, matching iOS's `showDeficitExplainer` block (`DashboardView+Cards.swift:116-152`). **Device-verified scout #23.** | ok | — |
+| Stat trio | taps route WEIGHT→Body, WORKOUTS→Workout, STREAK→Workout (`statTrio`, near the end of the file); iOS's `BodySummaryCardsRow` has a single `onTapBody` so all three go to Body. Downstream of the WORKOUTS/STREAK-for-SLEEP/READINESS substitution, not a separate defect. | deviation (by design) | #1070 |
+| Stability | 5× background/foreground cycles + 6 cold launches + tab round-trips: `adb logcat -d -b crash` **empty** for com.drift.health, `dumpsys activity anrs` clean, last tab correctly restored. **Device-verified scout #23** (directive 0-NO-CRASH). | ok | — |
 
 ## Body / Weight (epic #1065 = INDEX · Android-only re-creation: WeightTab.swift 326 ln vs iOS WeightTabView.swift 422 ln + 6 sub-views · **live scoped issues: #1205 insights+CURRENT-card+chrome [absorbs #1142] / #1143 affordance completion [absorbs #1144 #1145] / #1220 range-chip chart blanking / #1221 history-row content** · DEXA+photos → #1069 = INDEX, decomposed 2026-08-03 into #1185 DEXA screen / #1190 DEXA charts / #1191 DEXA PDF-import / #1186 gallery data defects / #1187 viewer / #1188 gallery structure / #1189 Trends sheet, plus existing #1166 capture · **Weight-tab rows DEVICE-VERIFIED 2026-08-11 (scout #22, build 90)**; DEXA + progress-photo rows below remain source/scout-#14 vintage)
 

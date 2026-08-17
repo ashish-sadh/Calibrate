@@ -74,6 +74,7 @@
 		421D57520E9C09C88A6A0B6B /* AlgorithmSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE2D9672D96D6738FA36D4F2 /* AlgorithmSettingsView.swift */; };
 		4319EDE7F6B2147FAB72CBDD /* PhotoLogServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A835CA7572E629657044C111 /* PhotoLogServiceTests.swift */; };
 		43FCEE74704AB4A0A900510A /* BarcodeScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55F24D93872F919F1A8CB319 /* BarcodeScannerView.swift */; };
+		445EF598BAC822D6B726D626 /* V6CoachingNudge.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA84C7363873C87C891C1269 /* V6CoachingNudge.swift */; };
 		458D9ECE76AED099E8D209E7 /* AIChatView+Suggestions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98ADC92978075E7C92121D54 /* AIChatView+Suggestions.swift */; };
 		4978523A1008B620BF04A6A7 /* DriftAppLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 893A2B9C27B65BD830B5A520 /* DriftAppLaunchTests.swift */; };
 		4BC91D0B7BC47D50583B7B4E /* CoachingBriefCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9693A1E065B9E2D3DA846EF /* CoachingBriefCard.swift */; };
@@ -96,7 +97,6 @@
 		61B9B828711B795636E338FD /* TimerCameraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1173E4390111E2DAAD85AC41 /* TimerCameraView.swift */; };
 		621BA8FF66853E0ADB161256 /* PerToolReliabilityEval.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAF40DC8990B1C6D8A2C89E3 /* PerToolReliabilityEval.swift */; };
 		624D0CDDC2EE4E9BFDD87100 /* AIChatView+Interview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45E9715E7742DEA96D171D84 /* AIChatView+Interview.swift */; };
-		62E0D9356E824048AA8747B6 /* V6CoachingNudge.swift in Sources */ = {isa = PBXBuildFile; fileRef = A136DEF679F5F2FAD7D167F7 /* V6CoachingNudge.swift */; };
 		64BFF27391CC32B927344BA1 /* ChatSuggestionPillsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9FA0E48A2845CFA85AB7395 /* ChatSuggestionPillsTests.swift */; };
 		64CD23436486963A92900597 /* CloudVisionClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 967917DDF4130B1A30B42ABA /* CloudVisionClient.swift */; };
 		6805E46813F436A37E4F3B2E /* latency-queries.json in Resources */ = {isa = PBXBuildFile; fileRef = B42BDAF88B654D1EE5C4C403 /* latency-queries.json */; };
@@ -460,7 +460,6 @@
 		9F9F051926CE39DF3E0A47DA /* BodySpecPDFParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodySpecPDFParser.swift; sourceTree = "<group>"; };
 		A039993077E4BE9F83149249 /* WeightInsightsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightInsightsView.swift; sourceTree = "<group>"; };
 		A048685BCBAD258ADEEB3E22 /* IntentRoutingEval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntentRoutingEval.swift; sourceTree = "<group>"; };
-		A136DEF679F5F2FAD7D167F7 /* V6CoachingNudge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = V6CoachingNudge.swift; sourceTree = "<group>"; };
 		A19A30BB3C9CCE28A9A758EF /* PhotoLogReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoLogReviewView.swift; sourceTree = "<group>"; };
 		A411F4544692EA6196F07C9C /* MacroRingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacroRingsView.swift; sourceTree = "<group>"; };
 		A434AE755701CCB89A111516 /* PipelineE2EEval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PipelineE2EEval.swift; sourceTree = "<group>"; };
@@ -472,6 +471,7 @@
 		A9291AC43FCD649801F866A5 /* MealTimelineSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MealTimelineSection.swift; sourceTree = "<group>"; };
 		A9693A1E065B9E2D3DA846EF /* CoachingBriefCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachingBriefCard.swift; sourceTree = "<group>"; };
 		A9DA1F02B1BF76DA862072A6 /* AIChooserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChooserView.swift; sourceTree = "<group>"; };
+		AA84C7363873C87C891C1269 /* V6CoachingNudge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = V6CoachingNudge.swift; sourceTree = "<group>"; };
 		AAC05282764E0169FEFB3D88 /* PhotoLogTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoLogTool.swift; sourceTree = "<group>"; };
 		AB0560C8A55F7D957B7F4921 /* FocusedSocialViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusedSocialViews.swift; sourceTree = "<group>"; };
 		ABDB900BABC9B592330F2629 /* DriftCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = DriftCore; path = DriftCore; sourceTree = SOURCE_ROOT; };
@@ -665,6 +665,7 @@
 				7CCE53CD3289EAA4CBDC5F8D /* TemplatePreviewSheet.swift */,
 				97546048A1775DD46E8D31FE /* Theme.swift */,
 				C0C39E63F96CF31FBB0B41E7 /* TypingDotsView.swift */,
+				AA84C7363873C87C891C1269 /* V6CoachingNudge.swift */,
 				D5FA2CD3013AC37A9FA85D34 /* VoiceMicButton.swift */,
 				C1981AE656052532EA6E94AB /* WorkoutDetailView.swift */,
 				842E86DB07844085C6BE92E5 /* WorkoutView.swift */,
@@ -817,7 +818,6 @@
 				7C1DB27256E400287AFC0488 /* NumericFieldSelectAll.swift */,
 				CB38650575385DB4CCB0BCA3 /* PastDayLogBadge.swift */,
 				EF4E87433C72DCD46B0D423D /* TodayDonutView.swift */,
-				A136DEF679F5F2FAD7D167F7 /* V6CoachingNudge.swift */,
 				35655D26FCDB45A9D01AD273 /* V6Rings.swift */,
 			);
 			path = Shared;
@@ -1375,7 +1375,7 @@
 				61B9B828711B795636E338FD /* TimerCameraView.swift in Sources */,
 				D460DC58016E359FB62DFCC3 /* TodayDonutView.swift in Sources */,
 				D9A128D4F889E2840AC18E69 /* TypingDotsView.swift in Sources */,
-				62E0D9356E824048AA8747B6 /* V6CoachingNudge.swift in Sources */,
+				445EF598BAC822D6B726D626 /* V6CoachingNudge.swift in Sources */,
 				0905877698D1E8F326D639E6 /* V6Rings.swift in Sources */,
 				D81FBCA09BF00517DBEF07AA /* VoiceLogSheet.swift in Sources */,
 				E511CC6FC43C76917A602C5B /* VoiceMicButton.swift in Sources */,
