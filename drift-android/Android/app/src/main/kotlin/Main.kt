@@ -13,7 +13,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.SystemBarStyle
 import androidx.activity.ComponentActivity
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
@@ -39,6 +38,14 @@ open class AndroidAppMain: Application {
 
     override fun onCreate() {
         super.onCreate()
+        // Drift is a light-only app by design — iOS pins this at DriftApp.swift:53
+        // (.preferredColorScheme(.light)). Pin the whole process light BEFORE any
+        // activity inflates, so the DayNight window background, isSystemInDarkTheme()
+        // and every AppCompat context resolve light even when the system is dark.
+        // Without this, uncoloured Text inherits Material's dark `onSurface` and
+        // renders white-on-white (#1228).
+        androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(
+            androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO)
         startStdioRelay()
         logger.info("starting app")
         ProcessInfo.launch(applicationContext)
@@ -215,20 +222,36 @@ internal fun SyncSystemBarsWithTheme() {
     }
 }
 
+/// Theme.background (SharedUI/Theme.swift:20, #EFEFF1) — Drift's page grey.
+private val DriftPageBackground = androidx.compose.ui.graphics.Color(0xFFEFEFF1)
+
 @Composable
 internal fun PresentationRootView(context: ComposeContext) {
-    val colorScheme = if (isSystemInDarkTheme()) ColorScheme.dark else ColorScheme.light
-    PresentationRoot(defaultColorScheme = colorScheme, context = context) { ctx ->
-        SyncSystemBarsWithTheme()
-        val contentContext = ctx.content()
-        // #1180: register this scope as a reader of ComposeKick.rootTick, so
-        // ComposeKick.kick() can invalidate the composition root and re-execute
-        // the bridged tree. NOT wrapped in key(...) — key would recreate
-        // composition state on every kick, losing scroll positions and the
-        // focused text field; a plain read invalidates while keeping identity.
-        ComposeKick.rootTick.value
-        Box(modifier = ctx.modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            AppRootView().Compose(context = contentContext)
+    // Light-only (see AndroidAppMain.onCreate). Hardcoded rather than derived from
+    // isSystemInDarkTheme() so the Compose scheme can't disagree with the process.
+    val colorScheme = ColorScheme.light
+    Material3ColorScheme({ scheme, _ ->
+        // SkipUI paints every presentation root — including the strip between the
+        // content and the floating pill bar — with colorScheme.surface
+        // (skip-ui Color.swift:202 → PresentationRoot.swift:55). Material You
+        // derives that from the wallpaper on API 31+, so the strip came out pale
+        // lavender in light mode and near-black in dark. Pin surface+background
+        // to the page grey so the strip matches the page in both. Scope stays
+        // minimal — dialog/menu/sheet container tones are #1204's territory.
+        scheme.copy(surface = DriftPageBackground, background = DriftPageBackground)
+    }, content = {
+        PresentationRoot(defaultColorScheme = colorScheme, context = context) { ctx ->
+            SyncSystemBarsWithTheme()
+            val contentContext = ctx.content()
+            // #1180: register this scope as a reader of ComposeKick.rootTick, so
+            // ComposeKick.kick() can invalidate the composition root and re-execute
+            // the bridged tree. NOT wrapped in key(...) — key would recreate
+            // composition state on every kick, losing scroll positions and the
+            // focused text field; a plain read invalidates while keeping identity.
+            ComposeKick.rootTick.value
+            Box(modifier = ctx.modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                AppRootView().Compose(context = contentContext)
+            }
         }
-    }
+    })
 }
