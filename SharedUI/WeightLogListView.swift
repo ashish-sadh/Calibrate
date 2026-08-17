@@ -8,6 +8,21 @@ struct WeightLogListView: View {
     var onEdit: ((WeightEntry) -> Void)? = nil
     var isLosing: Bool = true
 
+    #if os(Android)
+    /// Entry queued for deletion by the trailing trash button, awaiting the
+    /// confirmation dialog. iOS's delete is already a deliberate two-step
+    /// (long-press → destructive context-menu item); an unconfirmed one-tap
+    /// trash beside every row of a scrolling list is not an acceptable Android
+    /// equivalent for data we cannot rebuild.
+    ///
+    /// Presentation is a SEPARATE Bool from the id on purpose: dismissing the
+    /// dialog writes `isPresented = false` BEFORE the tapped button's action
+    /// runs, so a Binding whose setter cleared the id left the action reading
+    /// nil and silently deleting nothing.
+    @State var pendingDeleteID: Int64?
+    @State var showingDeleteConfirm = false
+    #endif
+
     private func changeColor(_ change: Double) -> Color {
         let isDecrease = change < -0.01
         let isIncrease = change > 0.01
@@ -65,17 +80,48 @@ struct WeightLogListView: View {
 
                     // Entries — LazyVStack so long histories don't build every
                     // row up front. (#950)
-                    LazyVStack(spacing: 0) {
-                        ForEach(Array(group.entries.enumerated()), id: \.element.id) { index, entry in
-                            entryRow(entry: entry, predecessor: entry.id.flatMap { predecessors[$0] })
-
-                            if index < group.entries.count - 1 {
-                                Divider().overlay(Theme.separator)
-                            }
-                        }
+                    #if os(Android)
+                    // A LazyVStack nested inside the tab's ScrollView measures
+                    // to zero height on Fuse (Compose gives a lazy list infinite
+                    // height constraints inside a scrollable parent), which
+                    // collapsed the whole History section — header included —
+                    // to a sliver. A month's worth of weigh-ins is small enough
+                    // to build eagerly.
+                    VStack(spacing: 0) {
+                        rows(group: group, predecessors: predecessors)
                     }
                     .card()
+                    #else
+                    LazyVStack(spacing: 0) {
+                        rows(group: group, predecessors: predecessors)
+                    }
+                    .card()
+                    #endif
                 }
+            }
+        }
+        #if os(Android)
+        .confirmationDialog("Delete this weigh-in?",
+                            isPresented: $showingDeleteConfirm,
+                            titleVisibility: .visible) {
+            // Only mutate state here — never call dismiss() from a dialog action
+            // on Fuse, where it closes the dialog and not the presenting sheet (#1219).
+            Button("Delete", role: .destructive) {
+                if let id = pendingDeleteID { onDelete(id) }
+                pendingDeleteID = nil
+            }
+            Button("Cancel", role: .cancel) { pendingDeleteID = nil }
+        }
+        #endif
+    }
+
+    @ViewBuilder
+    private func rows(group: MonthGroup, predecessors: [Int64: WeightEntry]) -> some View {
+        ForEach(Array(group.entries.enumerated()), id: \.element.id) { index, entry in
+            entryRow(entry: entry, predecessor: entry.id.flatMap { predecessors[$0] })
+
+            if index < group.entries.count - 1 {
+                Divider().overlay(Theme.separator)
             }
         }
     }
@@ -104,7 +150,7 @@ struct WeightLogListView: View {
                     // row showed a red ↘ beside "No Change" (field 2026-07-17).
                     let isFlat = abs(change) < 0.05
                     HStack(spacing: 4) {
-                        Image(systemName: isFlat ? "arrow.right" : change < 0 ? "arrow.down.right" : "arrow.up.right")
+                        Image(systemName: sym(isFlat ? "arrow.right" : change < 0 ? "arrow.down.right" : "arrow.up.right"))
                             .font(.caption2)
                         if isFlat {
                             Text("No Change")
@@ -123,8 +169,30 @@ struct WeightLogListView: View {
                     .font(.caption2)
                     .foregroundStyle(Theme.heartRed.opacity(0.5))
             }
+
+            #if os(Android)
+            // No contextMenu on Fuse and no swipeActions outside a List, so edit
+            // and delete need visible affordances: the row body taps through to
+            // edit, the trash opens the confirmation above.
+            Button {
+                pendingDeleteID = entry.id
+                showingDeleteConfirm = true
+            } label: {
+                Image(systemName: sym("trash"))
+                    .font(.caption)
+                    .foregroundStyle(Theme.textTertiary)
+                    .padding(.leading, 4)
+            }
+            .buttonStyle(.plain)
+            #endif
         }
         .padding(.vertical, 10)
+        #if os(Android)
+        // A tap on a .plain row without contentShape is dead space between the
+        // texts — the whole row must be the hit target.
+        .contentShape(Rectangle())
+        .onTapGesture { onEdit?(entry) }
+        #else
         .contextMenu {
             if let onEdit {
                 Button {
@@ -139,6 +207,7 @@ struct WeightLogListView: View {
                 Label("Delete Entry", systemImage: "trash")
             }
         }
+        #endif
     }
 
     private func formatDate(_ s: String) -> String {
@@ -147,7 +216,7 @@ struct WeightLogListView: View {
     }
 }
 
-private struct MonthGroup: Identifiable {
+struct MonthGroup: Identifiable {
     let id: String
     let title: String
     let entries: [WeightEntry]

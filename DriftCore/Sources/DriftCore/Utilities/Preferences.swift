@@ -26,6 +26,18 @@ public enum Preferences {
         set { kv.set(newValue.rawValue, forKey: weightUnitKey) }
     }
 
+    /// Date ("YYYY-MM-DD") of the weigh-in whose >10% big-change banner the user
+    /// has dismissed with "That's correct". Empty = nothing dismissed.
+    ///
+    /// Same key as the iOS Weight tab's `@AppStorage("drift_dismissed_outlier")`
+    /// — on Darwin the default store forwards to `UserDefaults.standard`, so the
+    /// two spellings read and write the same value. Android needs the seam: a
+    /// raw `@AppStorage` write there does not survive process death (#1108).
+    public static var dismissedOutlierDate: String {
+        get { kv.string(forKey: "drift_dismissed_outlier") ?? "" }
+        set { kv.set(newValue, forKey: "drift_dismissed_outlier") }
+    }
+
     // MARK: - Cycle
 
     private static let cycleFertileWindowKey = "drift_cycle_fertile_window"

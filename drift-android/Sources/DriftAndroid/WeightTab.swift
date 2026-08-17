@@ -5,12 +5,6 @@ import DriftCore
 
 // MARK: - Rows
 
-struct WeightRow: Identifiable, Sendable {
-    let id: Int64
-    let date: String
-    let display: String   // "82.4 kg"
-}
-
 struct WeightStats: Sendable {
     var current: String = "—"
     var trend: String = ""
@@ -35,6 +29,13 @@ enum WeightChartRange: String, CaseIterable {
     }
 }
 
+/// Mirrors `WeightViewModel.Granularity`. iOS presents it as a Menu+Picker;
+/// Picker-inside-Menu is unproven on Fuse, so Android uses two chips in the
+/// existing range-chip idiom — same two choices, same effect on the series.
+enum WeightGranularity: String, CaseIterable {
+    case daily = "Daily", weekly = "Weekly"
+}
+
 // MARK: - Store
 
 @MainActor @Observable public class WeightStore {
@@ -42,12 +43,28 @@ enum WeightChartRange: String, CaseIterable {
     static let shared = WeightStore()
 
     var stats = WeightStats()
-    var entries: [WeightRow] = []
-    /// Full-history daily series for `WeightChartAndroid` — the range chips
-    /// filter this in-memory rather than refetching (#1092).
+    /// Raw history, newest first — rendered by the single-sourced
+    /// `WeightLogListView` (month groups, medians, change arrows).
+    var history: [WeightEntry] = []
+    /// Full-history series for `WeightChartAndroid` at the current granularity;
+    /// the range chips filter this in-memory rather than refetching (#1092).
     var allDailyPoints: [WeightChartSeries.Point] = []
     var goalChangeKg: Double?
     var unit: WeightUnit = .kg
+    /// Goal direction, for the history rows' goal-aware change colours.
+    var isLosing: Bool = true
+    /// "New Low!" / "New High!" — cleared by the tab after the overlay plays.
+    var milestoneMessage: String?
+    /// False until the first reload lands, so the empty state can't flash
+    /// during DB warm-up (the Android read crosses JNI and is not instant).
+    var loaded = false
+    var granularity: WeightGranularity = .daily {
+        didSet { rebuildSeries() }
+    }
+
+    /// Calculator output kept so a granularity flip re-aggregates without a
+    /// refetch or a per-frame recompute.
+    private var trendPoints: [WeightTrendCalculator.WeightDataPoint] = []
 
     /// Loads once when `shared` is first touched — see FoodStore.init.
     init() { reload() }
@@ -62,11 +79,7 @@ enum WeightChartRange: String, CaseIterable {
             // range and a continuous EMA work — the chart needs the whole
             // trajectory even when the stats header/log list only show recent.
             let history = WeightServiceAPI.getHistory(days: 365).sorted { $0.date > $1.date }
-            entries = history.compactMap { e in
-                guard let id = e.id else { return nil }
-                return WeightRow(id: id, date: e.date,
-                                 display: Self.format(kg: e.weightKg, unit: unit))
-            }
+            self.history = history
             var s = WeightStats()
             if let latest = history.first {
                 s.current = Self.format(kg: latest.weightKg, unit: unit)
@@ -85,14 +98,28 @@ enum WeightChartRange: String, CaseIterable {
             // history's (descending) order here doesn't matter.
             let fullTrend = WeightTrendCalculator.calculateTrend(
                 entries: history.map { (date: $0.date, weightKg: $0.weightKg) })
-            allDailyPoints = fullTrend.map { WeightChartSeries.daily($0.dataPoints, unit: unit) } ?? []
-            goalChangeKg = WeightGoal.load()?.totalChangeKg
+            trendPoints = fullTrend?.dataPoints ?? []
+            rebuildSeries()
+            if let goal = WeightGoal.load() {
+                goalChangeKg = goal.totalChangeKg
+                isLosing = goal.isLosing(
+                    currentWeightKg: WeightTrendService.shared.latestWeightKg ?? goal.startWeightKg)
+            } else {
+                goalChangeKg = nil
+                isLosing = true
+            }
+            loaded = true
         }
     }
 
+    private func rebuildSeries() {
+        allDailyPoints = granularity == .weekly
+            ? WeightChartSeries.weekly(trendPoints, unit: unit)
+            : WeightChartSeries.daily(trendPoints, unit: unit)
+    }
+
     private static func format(kg: Double, unit: WeightUnit) -> String {
-        let value = unit == .kg ? kg : kg * 2.20462
-        return String(format: "%.1f %@", value, unit.displayName)
+        String(format: "%.1f %@", unit.convert(fromKg: kg), unit.displayName)
     }
 
     private static func change(history: [WeightEntry], days: Int, unit: WeightUnit) -> String? {
@@ -100,26 +127,43 @@ enum WeightChartRange: String, CaseIterable {
         let cutoff = DateFormatters.dateOnly.string(
             from: Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date())
         guard let past = history.last(where: { $0.date >= cutoff }), past.id != latest.id else { return nil }
-        let deltaKg = latest.weightKg - past.weightKg
-        let value = unit == .kg ? deltaKg : deltaKg * 2.20462
+        let value = unit.convert(fromKg: latest.weightKg - past.weightKg)
         let sign = value >= 0 ? "+" : ""
         return "\(sign)\(String(format: "%.1f", value)) \(unit.displayName)"
     }
 
-    func addWeight(_ text: String) {
-        let cleaned = text.replacingOccurrences(of: ",", with: ".")
-        guard let value = Double(cleaned) else { return }
+    /// Mirrors `WeightViewModel.addWeight(value:date:)` — same unit handling,
+    /// same milestone rule (`WeightMilestone`, Tier-0 tested), same upsert.
+    /// Editing an existing weigh-in comes through here too: `saveWeightEntry`
+    /// upserts by date, exactly as iOS does.
+    func addWeight(value: Double, date: Date) {
         // Read the unit at log time, never from a snapshot: a Settings change
         // between process start and now must decide how this value is stored (#1088).
-        let unitName = Preferences.weightUnit.displayName
+        let unit = Preferences.weightUnit
+        let kg = unit.convertToKg(value)
         FeatureUsage.record(TelemetryEvent.weightLogged)
+        // Milestone compares against the history BEFORE this entry is saved.
+        milestoneMessage = WeightMilestone.message(newWeightKg: kg,
+                                                   existingWeightsKg: history.map(\.weightKg),
+                                                   isLosing: isLosing, unit: unit)
         Task {
             await CoreResourcesBootstrap.warmUpDatabase()
-            _ = WeightServiceAPI.logWeight(value: value, unit: unitName)
+            var entry = WeightEntry(date: DateFormatters.dateOnly.string(from: date),
+                                    weightKg: kg, source: "manual")
+            try? AppDatabase.shared.saveWeightEntry(&entry)
             reload()
             // The dashboard's WEIGHT card reads its own store — without this
             // it kept showing the pre-log value until relaunch (#1090 sweep).
             TodayStore.shared.reload()
+        }
+    }
+
+    func saveBodyComposition(_ comp: BodyComposition) {
+        Task {
+            await CoreResourcesBootstrap.warmUpDatabase()
+            var entry = comp
+            WeightServiceAPI.saveBodyComposition(&entry)
+            reload()
         }
     }
 
@@ -132,12 +176,27 @@ enum WeightChartRange: String, CaseIterable {
     }
 }
 
+/// One presentation modifier drives both the add and the edit sheet — two
+/// `.sheet`s on one view is the Fuse trap `ProgressGalleryAndroid` already ate.
+/// The last body composition is captured at TAP time, never inside the sheet
+/// builder: Fuse builds sheet content eagerly, so an in-builder DB read (iOS's
+/// shape) would run on every render of the tab.
+struct WeightSheetRequest: Identifiable {
+    let id: String
+    let entry: WeightEntry?
+    let unit: WeightUnit
+    let lastComp: BodyComposition?
+}
+
 // MARK: - Weight tab
 
 struct WeightTab: View {
     @State var store = WeightStore.shared
-    @State var showingAdd = false
+    @State var activeSheet: WeightSheetRequest?
     @State var range: WeightChartRange = .threeMonths
+    @State var showLog = false
+    @State var showMilestone = false
+    @State var syncFeedback: String?
 
     /// In-memory re-window — no DB refetch on chip tap (#1092 plan).
     private var displayPoints: [WeightChartSeries.Point] {
@@ -148,94 +207,310 @@ struct WeightTab: View {
         return store.allDailyPoints.filter { $0.date >= cutoff }
     }
 
+    /// The latest weigh-in when it differs >10% from the one before it — iOS's
+    /// `bigChangeBanner` guard, same threshold, same dismissal key.
+    private var outlier: (latest: WeightEntry, previous: WeightEntry)? {
+        guard store.history.count >= 2 else { return nil }
+        let latest = store.history[0]
+        let previous = store.history[1]
+        guard previous.weightKg > 0 else { return nil }
+        let pctChange = abs(latest.weightKg - previous.weightKg) / previous.weightKg
+        guard pctChange > 0.10, Preferences.dismissedOutlierDate != latest.date else { return nil }
+        return (latest, previous)
+    }
+
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 14) {
-                    // Stats header
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("CURRENT").sectionHeading()
-                        Text(store.stats.current)
-                            .font(Theme.rounded(size: Theme.FontSize.display1).monospacedDigit())
-                            .foregroundStyle(Theme.textPrimary)
-                        if !store.stats.trend.isEmpty {
-                            Text(store.stats.trend)
-                                .font(.caption).foregroundStyle(Theme.textSecondary)
-                        }
-                        HStack(spacing: 12) {
-                            if let change = store.stats.change7d {
-                                changeChip("7d", change)
-                            }
-                            if let change = store.stats.change30d {
-                                changeChip("30d", change)
-                            }
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .card()
-
-                    Button { showingAdd = true } label: {
-                        Label("Log Weight", systemImage: "plus.circle.fill")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
-                            .background(Theme.accent, in: RoundedRectangle(cornerRadius: Theme.radiusControl, style: .continuous))
-                    }.buttonStyle(.plain)
-
-                    // Chart shows from the FIRST weigh-in, matching iOS
-                    // (WeightTabView gates on entries.isEmpty only). The old
-                    // >= 2 gate left a new user with no graph at all — and
-                    // with the outlier filter having eaten one of two honest
-                    // entries, it hid the chart even at two (2026-07-28).
-                    if !store.allDailyPoints.isEmpty {
-                        rangePicker
-                        if !displayPoints.isEmpty {
-                            WeightChartAndroid(points: displayPoints, unit: store.unit, goalChangeKg: store.goalChangeKg)
-                        }
-                    }
-
-                    // History
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("HISTORY").sectionHeading()
-                        if store.entries.isEmpty {
-                            Text("No weights yet — log your first above")
-                                .font(.caption).foregroundStyle(Theme.textTertiary)
-                                .frame(maxWidth: .infinity, alignment: .center)
-                                .padding(.vertical, 12)
-                        }
-                        ForEach(store.entries) { row in
-                            HStack {
-                                Text(row.date).font(.caption).foregroundStyle(Theme.textSecondary)
-                                Spacer()
-                                Text(row.display)
-                                    .font(.subheadline.weight(.semibold).monospacedDigit())
-                                    .foregroundStyle(Theme.textPrimary)
-                                Button { store.delete(id: row.id) } label: {
-                                    Image(systemName: "trash")
-                                        .font(.caption)
-                                        .foregroundStyle(Theme.textTertiary)
-                                }.buttonStyle(.plain)
-                            }
-                            .padding(.vertical, 3)
-                        }
-                    }
-                    .card()
+            Group {
+                if store.history.isEmpty {
+                    // Nothing to draw until the first read lands — showing the
+                    // empty state during warm-up would flash "Track Your Weight"
+                    // at a user who has 200 weigh-ins.
+                    if store.loaded { emptyState } else { Color.clear }
+                } else {
+                    weightScroll
                 }
-                .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 100)
             }
             .background(Theme.background.ignoresSafeArea())
-            .navigationTitle("Weight")
+            // iOS draws NO title on this screen (the Body tab's nav bar is
+            // empty); a large "Weight" header is Android-only chrome.
+            .toolbar(.hidden, for: .navigationBar)
             .onAppear { store.reload() }
-            .sheet(isPresented: $showingAdd) {
-                // Current unit, evaluated when the sheet presents — not the
-                // store's init-time snapshot (#1088).
-                AddWeightSheet(unit: Preferences.weightUnit) { text in
-                    store.addWeight(text)
+            .sheet(item: $activeSheet) { request in
+                WeightEntryView(
+                    unit: request.unit,
+                    initialWeight: request.entry?.weightKg,
+                    initialDate: request.entry?.date,
+                    lastBodyFat: request.lastComp?.bodyFatPct,
+                    lastBMI: request.lastComp?.bmi,
+                    lastWater: request.lastComp?.waterPct,
+                    onSave: { value, date in store.addWeight(value: value, date: date) },
+                    onSaveBodyComp: { comp in store.saveBodyComposition(comp) }
+                )
+            }
+            .onChange(of: store.milestoneMessage) { _, message in
+                guard message != nil else { return }
+                showMilestone = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                    showMilestone = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        store.milestoneMessage = nil
+                    }
+                }
+            }
+            // Haptics is an iOS app-target type; the bridged sensory feedback
+            // modifier is the Fuse-side equivalent of Haptics.celebrate().
+            // Closure form so only the ENTRANCE buzzes — the plain
+            // `trigger:` overload also fires when the overlay hides.
+            // Needs android.permission.VIBRATE in the manifest: SkipUI calls
+            // Vibrator.vibrate() unguarded, and without the permission this is
+            // a fatal SecurityException rather than a silent no-op.
+            .sensoryFeedback(trigger: showMilestone) { _, isShowing in
+                isShowing ? .success : nil
+            }
+            .overlay {
+                if showMilestone, let msg = store.milestoneMessage {
+                    milestoneCard(msg)
                 }
             }
         }
     }
+
+    private var weightScroll: some View {
+        ScrollView {
+            VStack(spacing: 14) {
+                // Stats header
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("CURRENT").sectionHeading()
+                    Text(store.stats.current)
+                        .font(Theme.rounded(size: Theme.FontSize.display1).monospacedDigit())
+                        .foregroundStyle(Theme.textPrimary)
+                    if !store.stats.trend.isEmpty {
+                        Text(store.stats.trend)
+                            .font(.caption).foregroundStyle(Theme.textSecondary)
+                    }
+                    HStack(spacing: 12) {
+                        if let change = store.stats.change7d {
+                            changeChip("7d", change)
+                        }
+                        if let change = store.stats.change30d {
+                            changeChip("30d", change)
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .card()
+
+                Button { presentSheet(editing: nil) } label: {
+                    Label("Log Weight", systemImage: sym("plus.circle.fill"))
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .background(Theme.accent, in: RoundedRectangle(cornerRadius: Theme.radiusControl, style: .continuous))
+                }.buttonStyle(.plain)
+
+                bigChangeBanner
+
+                // Chart shows from the FIRST weigh-in, matching iOS
+                // (WeightTabView gates on entries.isEmpty only). The old
+                // >= 2 gate left a new user with no graph at all — and
+                // with the outlier filter having eaten one of two honest
+                // entries, it hid the chart even at two (2026-07-28).
+                if !store.allDailyPoints.isEmpty {
+                    rangePicker
+                    if !displayPoints.isEmpty {
+                        WeightChartAndroid(points: displayPoints, unit: store.unit,
+                                           goalChangeKg: store.goalChangeKg,
+                                           isWeekly: store.granularity == .weekly)
+                    }
+                }
+
+                logSection
+            }
+            .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 100)
+        }
+    }
+
+    // MARK: - Big change banner (port of WeightTabView.bigChangeBanner)
+
+    @ViewBuilder
+    private var bigChangeBanner: some View {
+        if let outlier {
+            let unit = store.unit
+            VStack(spacing: 8) {
+                HStack(spacing: 6) {
+                    // The warning triangle is the INTENDED glyph here.
+                    Image(systemName: sym("exclamationmark.triangle.fill")).foregroundStyle(Theme.fatYellow)
+                    Text("Big change: \(String(format: "%.1f", unit.convert(fromKg: outlier.previous.weightKg))) → \(String(format: "%.1f", unit.convert(fromKg: outlier.latest.weightKg))) \(unit.displayName)")
+                        .font(.caption.weight(.medium))
+                }
+                HStack(spacing: 12) {
+                    Button {
+                        // Durable on Android: a raw @AppStorage write would not
+                        // survive process death (#1108).
+                        Preferences.dismissedOutlierDate = outlier.latest.date
+                        store.reload()
+                    } label: {
+                        Text("That's correct").font(.caption2.weight(.medium))
+                    }.buttonStyle(.bordered).tint(Theme.accent)
+
+                    Button {
+                        presentSheet(editing: outlier.latest)
+                    } label: {
+                        Text("Edit").font(.caption2.weight(.medium))
+                    }.buttonStyle(.bordered)
+
+                    Button {
+                        if let id = outlier.latest.id { store.delete(id: id) }
+                    } label: {
+                        Text("Remove").font(.caption2.weight(.medium))
+                    }.buttonStyle(.bordered).tint(Theme.surplus)
+                }
+            }
+            .padding(12)
+            .background(Theme.fatYellow.opacity(0.08), in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
+        }
+    }
+
+    // MARK: - Collapsible history (port of WeightTabView.logSection)
+
+    private var logSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) { showLog.toggle() }
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: sym("clock.arrow.circlepath"))
+                        .font(.caption)
+                        .foregroundStyle(Theme.accent)
+                    Text("History")
+                        .font(.subheadline.weight(.semibold))
+                    Spacer()
+                    Text("\(store.history.count) entries")
+                        .font(.caption)
+                        .foregroundStyle(Theme.textTertiary)
+                    Image(systemName: sym("chevron.down"))
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(Theme.accent)
+                        .rotationEffect(.degrees(showLog ? 0 : -90))
+                }
+                .card()
+            }
+            .buttonStyle(.plain)
+
+            if showLog {
+                WeightLogListView(
+                    entries: store.history,
+                    unit: store.unit,
+                    onDelete: { store.delete(id: $0) },
+                    onEdit: { presentSheet(editing: $0) },
+                    isLosing: store.isLosing
+                )
+            }
+        }
+    }
+
+    // MARK: - Milestone (port of WeightTabView's overlay)
+
+    private func milestoneCard(_ msg: String) -> some View {
+        VStack(spacing: 6) {
+            Image(systemName: sym("star.fill"))
+                .font(.title2).foregroundStyle(Theme.fatYellow)
+            Text(msg)
+                .font(.headline.weight(.bold))
+                .foregroundStyle(.white)
+        }
+        .padding(.horizontal, 28).padding(.vertical, 16)
+        .background(Theme.ink, in: RoundedRectangle(cornerRadius: Theme.radiusCard, style: .continuous))
+        .shadowGlow()
+        .scaleEffect(showMilestone ? 1.0 : 0.8)
+        .opacity(showMilestone ? 1.0 : 0)
+        .animation(Theme.Motion.hero, value: showMilestone)
+    }
+
+    // MARK: - Empty state (port of WeightTabView.emptyState)
+
+    private var emptyState: some View {
+        VStack(spacing: 20) {
+            Spacer()
+
+            // No scale glyph exists in skip-ui 1.58's ~46-symbol map (and
+            // sym("scalemass") targets a 1.59-only name), so the tab draws the
+            // chart mark the rest of the app already uses for weight.
+            BarChartShape()
+                .fill(Theme.accent.opacity(0.4))
+                .frame(width: 56, height: 56)
+
+            VStack(spacing: 6) {
+                Text("Track Your Weight")
+                    .font(.title3.weight(.semibold))
+                Text(healthSyncAvailable
+                     ? "Log your first weigh-in or sync from Health Connect to start tracking your progress."
+                     : "Log your first weigh-in to start tracking your progress.")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(2)
+            }
+
+            VStack(spacing: 10) {
+                if healthSyncAvailable {
+                    Button {
+                        Task { await syncFromHealthConnect() }
+                    } label: {
+                        Label("Sync from Health Connect", systemImage: sym("heart.fill"))
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(Theme.accent)
+                }
+
+                if let syncFeedback {
+                    Text(syncFeedback)
+                        .font(.caption)
+                        .foregroundStyle(Theme.textSecondary)
+                        .multilineTextAlignment(.center)
+                }
+
+                Button { presentSheet(editing: nil) } label: {
+                    Label("Log Weight Manually", systemImage: sym("plus"))
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+            }
+            .padding(.horizontal, 20)
+
+            Spacer()
+        }
+        .padding(.horizontal, 32)
+    }
+
+    /// Hide the sync CTA rather than show a button that can't work — the seam
+    /// is registered but Health Connect itself may be absent on the device.
+    private var healthSyncAvailable: Bool {
+        DriftPlatform.health?.isAvailable == true
+    }
+
+    /// iOS's three-fix first-sync flow (field report 2026-07-09), with Health
+    /// Connect's permission story instead of Apple Health's: ask HERE (the
+    /// launch sheet may never have completed), FULL resync (an empty state
+    /// means nothing is incremental), and a visible outcome either way.
+    private func syncFromHealthConnect() async {
+        syncFeedback = "Syncing…"
+        do {
+            guard let health = DriftPlatform.health else { return }
+            try await health.requestAuthorization()
+            let count = try await health.fullResyncWeight()
+            store.reload()
+            syncFeedback = count > 0 ? nil :
+                "No weight data found. If Health Connect has your weight, grant Drift the Weight permission in Health Connect → App permissions."
+        } catch {
+            syncFeedback = "Sync failed: \(error.localizedDescription)"
+        }
+    }
+
+    // MARK: - Chrome
 
     private var rangePicker: some View {
         HStack(spacing: 0) {
@@ -253,6 +528,19 @@ struct WeightTab: View {
                 }.buttonStyle(.plain)
             }
             Spacer()
+            ForEach(WeightGranularity.allCases, id: \.self) { g in
+                Button {
+                    store.granularity = g
+                } label: {
+                    Text(g.rawValue)
+                        .font(.caption.weight(.bold))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(store.granularity == g ? Theme.cardBackgroundElevated : Color.clear,
+                                    in: RoundedRectangle(cornerRadius: 6))
+                        .foregroundStyle(store.granularity == g ? Theme.textPrimary : Theme.textSecondary)
+                }.buttonStyle(.plain)
+            }
         }
     }
 
@@ -268,59 +556,18 @@ struct WeightTab: View {
         .padding(.horizontal, 8).padding(.vertical, 4)
         .background(Theme.pillBackground, in: Capsule())
     }
-}
 
-struct WeightInputField: View {
-    @Binding var text: String
-    let unit: WeightUnit
-
-    var body: some View {
-        HStack(spacing: 8) {
-            NumericField(unit == .kg ? "72.5" : "160.0", text: $text)
-                .textFieldStyle(.roundedBorder)
-                .font(.title2)
-            Text(unit.displayName)
-                .font(.headline).foregroundStyle(Theme.textSecondary)
-        }
-    }
-}
-
-struct AddWeightSheet: View {
-    let unit: WeightUnit
-    let onSave: (String) -> Void
-    @Environment(\.dismiss) var dismiss
-    @State var text = ""
-
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: 16) {
-                Text("Log Weight").font(Theme.fontTitle)
-                WeightInputField(text: $text, unit: unit)
-                Button {
-                    // Validate in the action, not via .disabled — Fuse's
-                    // .disabled reactivity on this button was unreliable
-                    // (#1091). Save is always tappable; empty/invalid input
-                    // is a silent no-op that leaves the sheet open.
-                    let cleaned = text.replacingOccurrences(of: ",", with: ".")
-                    guard Double(cleaned) != nil else { return }
-                    onSave(text)
-                    dismiss()
-                } label: {
-                    Text("Save")
-                        .font(.headline)
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(Theme.accent, in: Capsule())
-                }
-                .buttonStyle(.plain)
-                Spacer()
-            }
-            .padding(20)
-            .background(Theme.background)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
-            }
+    /// `latestBodyComposition()` is read here, on the tap, and handed to the
+    /// sheet — never read inside the sheet builder (Fuse builds those eagerly).
+    private func presentSheet(editing entry: WeightEntry?) {
+        Task {
+            await CoreResourcesBootstrap.warmUpDatabase()
+            let comp = WeightServiceAPI.latestBodyComposition()
+            activeSheet = WeightSheetRequest(
+                id: entry?.id.map { String($0) } ?? "add",
+                entry: entry,
+                unit: Preferences.weightUnit,
+                lastComp: comp)
         }
     }
 }

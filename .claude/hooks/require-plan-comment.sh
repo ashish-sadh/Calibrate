@@ -39,6 +39,16 @@ echo "$COMMAND" | grep -qE "git[[:space:]]+commit" || exit 0
 # 2. Explicit escape hatch.
 [[ "${DRIFT_SKIP_PLAN_COMMENT:-0}" == "1" ]] && exit 0
 
+# 2b. The parity lanes claim `android-parity` issues, which sprint-state.json
+#     does not track — so every check below would grade this commit against
+#     whatever the SPRINT lane last claimed (seen 2026-08-17: #1143's commit
+#     blocked citing #1018, a stranger's ticket). The rule still binds those
+#     lanes; it is enforced where their work actually lives: the parity
+#     planner writes a `## Plan` comment on the issue before it is labelled
+#     `planned`, and the executor may not claim an unplanned one.
+#     Same stale-in_progress flaw as require-qa-verdict.sh.
+[[ -n "${DRIFT_PARITY_LANE:-}" ]] && exit 0
+
 STATE_FILE="$HOME/drift-state/sprint-state.json"
 [ -f "$STATE_FILE" ] || exit 0
 

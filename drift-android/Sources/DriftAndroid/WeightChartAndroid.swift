@@ -13,6 +13,9 @@ struct WeightChartAndroid: View {
     let points: [WeightChartSeries.Point]
     let unit: WeightUnit
     let goalChangeKg: Double?
+    /// Weekly aggregation plots far fewer readings, so iOS grows the scale
+    /// marker (symbolSize 26 vs 14, `WeightChartView.swift:182`); mirror that.
+    var isWeekly: Bool = false
 
     private var averageWeight: Double {
         let actuals = points.compactMap(\.actual)
@@ -44,7 +47,7 @@ struct WeightChartAndroid: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             header
-            WeightChartPlot(points: points, trendColor: trendColor)
+            WeightChartPlot(points: points, trendColor: trendColor, isWeekly: isWeekly)
                 .frame(height: 165)
             if let f = points.first?.date, let l = points.last?.date {
                 HStack {
@@ -123,6 +126,7 @@ struct WeightChartAndroid: View {
 struct WeightChartPlot: View {
     let points: [WeightChartSeries.Point]
     let trendColor: Color
+    var isWeekly: Bool = false
 
     var body: some View {
         HStack(alignment: .top, spacing: 4) {
@@ -155,7 +159,7 @@ struct WeightChartPlot: View {
 
     @ViewBuilder
     private func plotLayer(in size: CGSize) -> some View {
-        if let chart = Self.cachedChart(points: points, size: size) {
+        if let chart = Self.cachedChart(points: points, size: size, isWeekly: isWeekly) {
             ZStack(alignment: .topLeading) {
                 if let ruleY = chart.ruleY {
                     Path { p in
@@ -197,20 +201,20 @@ struct WeightChartPlot: View {
     private static var cache: [String: BuiltChart] = [:]
     private static let cacheLock = NSLock()
 
-    private static func cachedChart(points: [WeightChartSeries.Point], size: CGSize) -> BuiltChart? {
+    private static func cachedChart(points: [WeightChartSeries.Point], size: CGSize, isWeekly: Bool) -> BuiltChart? {
         guard points.count >= 2, size.width > 0, size.height > 0 else { return nil }
-        let key = "\(Int(size.width))x\(Int(size.height))|\(points.count)"
+        let key = "\(Int(size.width))x\(Int(size.height))|\(points.count)|\(isWeekly)"
             + "|\(points.first?.date.timeIntervalSince1970 ?? 0)"
             + "|\(points.last?.date.timeIntervalSince1970 ?? 0)"
             + "|\(points.last?.ema ?? 0)|\(points.last?.actual ?? -1)"
         cacheLock.lock(); defer { cacheLock.unlock() }
         if let cached = cache[key] { return cached }
-        let built = build(points: points, size: size)
+        let built = build(points: points, size: size, isWeekly: isWeekly)
         cache[key] = built
         return built
     }
 
-    private static func build(points: [WeightChartSeries.Point], size: CGSize) -> BuiltChart? {
+    private static func build(points: [WeightChartSeries.Point], size: CGSize, isWeekly: Bool) -> BuiltChart? {
         let values = points.compactMap(\.actual) + points.map(\.ema)
         guard let lo = values.min(), let hi = values.max() else { return nil }
         let pad = max(0.5, (hi - lo) * 0.12)
@@ -238,7 +242,7 @@ struct WeightChartPlot: View {
         var scaleLine = Path()
         var scaleDots = Path()
         var scaleStarted = false
-        let dotRadius: CGFloat = 1.9
+        let dotRadius: CGFloat = isWeekly ? 2.6 : 1.9
         for p in points {
             guard let actual = p.actual else { continue }
             let pt = CGPoint(x: x(for: p.date), y: y(for: actual))

@@ -115,17 +115,10 @@ final class WeightViewModel {
         var entry = WeightEntry(date: DateFormatters.dateOnly.string(from: date), weightKg: kg, source: "manual")
         do {
             // Check for milestone BEFORE saving (compare against existing entries)
-            let existingWeights = allEntries.map(\.weightKg)
-            if !existingWeights.isEmpty {
-                if isLosing {
-                    if let currentMin = existingWeights.min(), kg < currentMin {
-                        milestoneMessage = "New Low! \(String(format: "%.1f", weightUnit.convert(fromKg: kg))) \(weightUnit.displayName)"
-                    }
-                } else {
-                    if let currentMax = existingWeights.max(), kg > currentMax {
-                        milestoneMessage = "New High! \(String(format: "%.1f", weightUnit.convert(fromKg: kg))) \(weightUnit.displayName)"
-                    }
-                }
+            if let message = WeightMilestone.message(newWeightKg: kg,
+                                                     existingWeightsKg: allEntries.map(\.weightKg),
+                                                     isLosing: isLosing, unit: weightUnit) {
+                milestoneMessage = message
             }
             try database.saveWeightEntry(&entry)
             loadEntries()

@@ -138,6 +138,12 @@ func sym(_ name: String) -> String {
     // means a new caller gets a visible warning triangle rather than a silent
     // wrong glyph, the same way sym("timer") was removed in sweep #6.
     case "arrow.left.and.right": return "arrow.forward"
+    // Weight-history change arrows (#1143). Material has no diagonal arrow of
+    // any kind, so the direction chevrons carry "down"/"up" and the mapped
+    // forward arrow carries "no change" — same meanings, mapped glyphs.
+    case "arrow.right": return "arrow.forward"
+    case "arrow.down.right": return "chevron.down"
+    case "arrow.up.right": return "chevron.up"
     default: return name
     }
     #else

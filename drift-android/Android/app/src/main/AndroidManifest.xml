@@ -30,6 +30,13 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
+    <!-- Haptics. SkipUI's `.sensoryFeedback` calls Vibrator.vibrate() with NO
+         permission guard, so without this line the first haptic is a FATAL
+         SecurityException, not a silent no-op — the weight-milestone
+         celebration killed the app (#1143). VIBRATE is a normal permission:
+         granted at install, never prompted, not shown in the Play listing. -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
     <!-- Pre-Android-14 devices host Health Connect as this Play-store app -->
     <queries>
         <package android:name="com.google.android.apps.healthdata" />
