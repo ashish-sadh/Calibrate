@@ -2,9 +2,10 @@ import SwiftUI
 import DriftCore
 
 /// Android's Progress-photo timeline (#1121). Shows the check-in cards the
-/// operator's iPhone shows — date, weight, the 4-up pose row, and the headline
-/// measurement — reusing `ProgressPhotoImage` so both platforms load the
-/// identical on-device JPEGs.
+/// operator's iPhone shows — formatted date, the nearest weigh-in within ±14
+/// days, the pose row, and the measurement summary — off the same
+/// `fetchProgressEntries()` query iOS reads (#1186), reusing
+/// `ProgressPhotoImage` so both platforms load the identical on-device JPEGs.
 ///
 /// The toolbar "+" adds a photo through the `DriftPlatform.imagePicker` seam
 /// (#1128) — v1 is deliberately front-pose/today with no measurements; full
@@ -18,7 +19,8 @@ struct ProgressGalleryAndroid: View {
 
     struct Entry: Identifiable, Sendable {
         let id: String            // date
-        let date: String
+        let date: String          // "YYYY-MM-DD" — the ±14d weight match keys off this
+        let dateDisplay: String   // "Jul 14, 2026" — formatted off-main
         let photos: [ProgressPhoto]
         let weightDisplay: String?
         let measurementLine: String?
@@ -103,21 +105,30 @@ struct ProgressGalleryAndroid: View {
     private func entryCard(_ entry: Entry) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text(entry.date).font(.headline).foregroundStyle(Theme.textPrimary)
+                Text(entry.dateDisplay)
+                    .font(.subheadline.weight(.semibold)).foregroundStyle(Theme.textPrimary)
                 Spacer()
                 if let w = entry.weightDisplay {
-                    Text(w).font(.subheadline).foregroundStyle(Theme.textSecondary)
+                    Text(w).font(.caption).foregroundStyle(Theme.textSecondary)
                 }
             }
-            HStack(spacing: 8) {
-                ForEach(entry.photos) { photo in
-                    ProgressPhotoImage(filename: photo.filename)
-                        .frame(width: 74, height: 98)
-                        .clipShape(RoundedRectangle(cornerRadius: Theme.radiusSmall))
+            // A measurement-only check-in has no photos at all (iOS :207) —
+            // don't leave an empty row's spacing behind it.
+            if !entry.photos.isEmpty {
+                HStack(spacing: 8) {
+                    ForEach(entry.photos) { photo in
+                        ProgressPhotoImage(filename: photo.filename)
+                            .frame(width: 74, height: 98)
+                            .clipShape(RoundedRectangle(cornerRadius: Theme.radiusSmall))
+                    }
                 }
             }
             if let line = entry.measurementLine {
-                Text(line).font(.caption).foregroundStyle(Theme.textSecondary)
+                // Matches iOS :216-217. NOTE: a long line (4 sites in cm) clips
+                // without the "…" iOS shows — Fuse marks .truncationMode
+                // @available(*, unavailable), so there is no call-site fix.
+                // Tracked app-wide as #1237.
+                Text(line).font(.caption2).foregroundStyle(Theme.textTertiary).lineLimit(1)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -129,28 +140,40 @@ struct ProgressGalleryAndroid: View {
     private func load() async {
         await CoreResourcesBootstrap.warmUpDatabase()
         let unit = Preferences.weightUnit
+        let inInches = unit == .lbs
         let rows: [Entry] = await withCheckedContinuation { continuation in
             DispatchQueue.global(qos: .userInitiated).async {
-                let photos = (try? AppDatabase.shared.fetchProgressPhotos()) ?? []
-                let measurements = (try? AppDatabase.shared.fetchBodyMeasurements()) ?? []
-                let weights = WeightServiceAPI.getHistory(days: 3650)
+                // The same source iOS reload() reads (ProgressGalleryView:288):
+                // a day's photos AND that day's measurement. Grouping raw photos
+                // — what this used to do — dropped tape-only check-ins entirely.
+                let raw = (try? AppDatabase.shared.fetchProgressEntries()) ?? []
+                let weights = (try? AppDatabase.shared.fetchWeightEntries()) ?? []
 
-                let byDate = Dictionary(grouping: photos.filter { ProgressPhotoPaths.fileExists($0.filename) },
-                                        by: { $0.date })
-                let built = byDate.keys.sorted(by: >).map { date -> Entry in
-                    let posed = byDate[date]?.sorted { lhs, rhs in
-                        (ProgressPose.allCases.firstIndex(of: lhs.poseEnum ?? .front) ?? 0)
-                            < (ProgressPose.allCases.firstIndex(of: rhs.poseEnum ?? .front) ?? 0)
-                    } ?? []
-                    let kg = weights.first { $0.date == date }?.weightKg
-                    let weightDisplay = kg.map { value -> String in
-                        let shown = unit == .kg ? value : value * 2.20462
+                // fetchProgressEntries() is documented newest-first; keep its order.
+                let built = raw.compactMap { entry -> Entry? in
+                    // Drop photo rows whose file is missing (a partial restore)
+                    // so a card never shows a blank thumbnail — iOS :289-293.
+                    let posed = entry.photos
+                        .filter { ProgressPhotoPaths.fileExists($0.filename) }
+                        .sorted { lhs, rhs in
+                            (ProgressPose.allCases.firstIndex(of: lhs.poseEnum ?? .front) ?? 0)
+                                < (ProgressPose.allCases.firstIndex(of: rhs.poseEnum ?? .front) ?? 0)
+                        }
+                    guard !posed.isEmpty || entry.measurement?.isEmpty == false else { return nil }
+
+                    let weightDisplay = Self.nearestWeightKg(for: entry.date, in: weights).map { value -> String in
+                        let shown = inInches ? value * 2.20462 : value
                         return String(format: "%.1f %@", shown, unit.displayName)
                     }
-                    let measurement = measurements.first { $0.date == date }
-                    return Entry(id: date, date: date, photos: posed,
+                    let line = entry.measurement.flatMap { m -> String? in
+                        let summary = Self.measurementSummary(m, inInches: inInches)
+                        return summary.isEmpty ? nil : summary
+                    }
+                    return Entry(id: entry.date, date: entry.date,
+                                 dateDisplay: Self.formatDate(entry.date),
+                                 photos: posed,
                                  weightDisplay: weightDisplay,
-                                 measurementLine: measurement.flatMap(Self.headlineMeasurement))
+                                 measurementLine: line)
                 }
                 continuation.resume(returning: built)
             }
@@ -159,11 +182,65 @@ struct ProgressGalleryAndroid: View {
         loaded = true
     }
 
-    /// One line, matching what iOS surfaces under the thumbnails ("Chest 33.6 in").
-    /// Measurements are stored in cm keyed by `MeasurementSite.rawValue`.
-    /// `nonisolated` — this runs inside the off-main load closure.
-    nonisolated private static func headlineMeasurement(_ m: BodyMeasurement) -> String? {
-        guard let chestCm = m.measurementsCm[MeasurementSite.chest.rawValue] else { return nil }
-        return String(format: "Chest %.1f in", chestCm / 2.54)
+    // MARK: - Display helpers
+    //
+    // Ports of iOS ProgressGalleryView.swift:255-273 and its ±14-day
+    // nearest-weight loop (:295-309). `nonisolated static` — they run inside
+    // the off-main load closure.
+
+    /// Up to 4 sites in `MeasurementSite.displayOrder`, unit following the
+    /// user's weight preference — iOS :255-264. (Was: chest only, always in
+    /// inches, which hid every other site a user measured.)
+    nonisolated static func measurementSummary(_ m: BodyMeasurement, inInches: Bool) -> String {
+        MeasurementSite.displayOrder.compactMap { site -> String? in
+            guard let cm = m.value(for: site) else { return nil }
+            return "\(site.displayName) \(formatCm(cm, inInches: inInches))"
+        }.prefix(4).joined(separator: " · ")
+    }
+
+    nonisolated static func formatCm(_ cm: Double, inInches: Bool) -> String {
+        inInches ? String(format: "%.1f in", cm / 2.54) : String(format: "%.1f cm", cm)
+    }
+
+    /// "2026-07-14" → "Jul 14, 2026" — iOS :266-273. Pure string work, so no
+    /// DateFormatter and no UTC hazard (android_foundation_utc_dateformatter).
+    nonisolated static func formatDate(_ dateStr: String) -> String {
+        let parts = dateStr.split(separator: "-")
+        guard parts.count == 3 else { return dateStr }
+        let months = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        let m = Int(parts[1]) ?? 0, d = Int(parts[2]) ?? 0
+        guard m > 0, m <= 12 else { return dateStr }
+        return "\(months[m]) \(d), \(parts[0])"
+    }
+
+    /// The nearest weigh-in within ±14 days of a check-in, iOS :300-309. People
+    /// rarely weigh in on the day they shoot photos, so an exact-date match —
+    /// what this used to do — showed no weight on almost every card.
+    nonisolated static func nearestWeightKg(for date: String, in weights: [WeightEntry]) -> Double? {
+        guard let target = dayNumber(date) else { return nil }
+        var best: (kg: Double, gap: Int)?
+        for w in weights {
+            guard let day = dayNumber(String(w.date.prefix(10))) else { continue }
+            let gap = abs(day - target)
+            if gap <= 14, best == nil || gap < best!.gap { best = (w.weightKg, gap) }
+        }
+        return best?.kg
+    }
+
+    /// Days since 1970-01-01 for a "YYYY-MM-DD" string (days-from-civil).
+    /// iOS parses both sides with a DateFormatter; integer arithmetic gives the
+    /// identical gap without paying a formatter parse per (check-in × weigh-in)
+    /// and without the Android UTC default mattering at all.
+    nonisolated static func dayNumber(_ dateStr: String) -> Int? {
+        let parts = dateStr.split(separator: "-")
+        guard parts.count == 3,
+              let year = Int(parts[0]), let month = Int(parts[1]), let day = Int(parts[2]),
+              month >= 1, month <= 12, day >= 1, day <= 31 else { return nil }
+        let y = month <= 2 ? year - 1 : year
+        let era = (y >= 0 ? y : y - 399) / 400
+        let yearOfEra = y - era * 400                                       // [0, 399]
+        let dayOfYear = (153 * (month + (month > 2 ? -3 : 9)) + 2) / 5 + day - 1   // [0, 365]
+        let dayOfEra = yearOfEra * 365 + yearOfEra / 4 - yearOfEra / 100 + dayOfYear
+        return era * 146_097 + dayOfEra - 719_468
     }
 }
