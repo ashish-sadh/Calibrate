@@ -165,7 +165,13 @@ struct AIChatView: View {
         .sheet(isPresented: $vm.showingWorkout) {
             if let template = vm.workoutTemplate {
                 NavigationStack {
-                    ActiveWorkoutView(template: template) {
+                    ActiveWorkoutView(template: template, onClose: {
+                        // This sheet is stacked on the Coach chat sheet, where
+                        // `dismiss()` inside ActiveWorkoutView never fires (#1219)
+                        // — closing has to come from the binding we own here.
+                        vm.showingWorkout = false
+                        vm.workoutTemplate = nil
+                    }) {
                         vm.showingWorkout = false
                         vm.workoutTemplate = nil
                     }

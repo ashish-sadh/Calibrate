@@ -28,6 +28,17 @@ struct ActiveWorkoutView: View {
     @Environment(\.scenePhase) var scenePhase
     var template: WorkoutTemplate? = nil
     var pastDate: Date? = nil  // Non-nil = logging a past workout (no timer)
+    /// How the PRESENTER closes this sheet. `@Environment(\.dismiss)` is not
+    /// enough on Android: when this view is presented from inside another sheet
+    /// (Coach chat → "start full body", AIChatView:168) every `dismiss()` in
+    /// here is a silent no-op — device-verified 2026-08-18 on build 111 for the
+    /// close dialog AND for the plain in-content "Cancel Workout" button, so
+    /// it's the stacked presentation that breaks, not dialog scope (#1219).
+    /// The side effects still ran, which is the dangerous part: "Discard"
+    /// cleared the session and left the user staring at the workout it had
+    /// just deleted. Writing the presenter's own binding is the one thing that
+    /// reliably lands, so presenters hand it in here.
+    var onClose: (() -> Void)? = nil
     let onComplete: () -> Void
     @Environment(\.dismiss) var dismiss
     @State var workoutName = defaultWorkoutName()
@@ -179,10 +190,10 @@ struct ActiveWorkoutView: View {
         .confirmationDialog("Workout in progress", isPresented: $showingCloseOptions, titleVisibility: .visible) {
             // Away time doesn't count once the sheet is closed — the clock
             // resumes from trained time (see restoreSession).
-            Button("Minimize — resume anytime") { persistSession(); dismiss() }
+            Button("Minimize — resume anytime") { persistSession(); closeSheet() }
             Button("Discard workout", role: .destructive) {
                 workoutEnded = true
-                WorkoutService.clearSession(); stopTimers(); dismiss()
+                WorkoutService.clearSession(); stopTimers(); closeSheet()
             }
             Button("Keep going", role: .cancel) {}
         } message: {
@@ -289,7 +300,7 @@ struct ActiveWorkoutView: View {
 
                         Button("Cancel Workout", role: .destructive) {
                             workoutEnded = true
-                            WorkoutService.clearSession(); stopTimers(); dismiss()
+                            WorkoutService.clearSession(); stopTimers(); closeSheet()
                         }.font(.caption).padding(.top, 4)
                     }
                 }.padding(.top, 8).padding(.bottom, 24)
@@ -413,7 +424,7 @@ struct ActiveWorkoutView: View {
                             saveWorkout(andDismiss: !saveAsTemplateToggle)
                             if saveAsTemplateToggle {
                                 saveAsTemplate(name: templateName.isEmpty ? workoutName : templateName)
-                                onComplete(); dismiss()
+                                onComplete(); closeSheet()
                             }
                         } label: {
                             Text("Save Workout").font(.headline).frame(maxWidth: .infinity)
@@ -441,7 +452,7 @@ struct ActiveWorkoutView: View {
             }
             .sheet(isPresented: $showingCompletionSheet) {
                 // Dismiss everything when completion sheet closes
-                onComplete(); dismiss()
+                onComplete(); closeSheet()
             } content: {
                 completionSheet()
             }
@@ -462,6 +473,20 @@ struct ActiveWorkoutView: View {
                         // kill has already synced on a persist tick. Baseline
                         // from here so a resume never re-writes the template.
                         captureNotesBaseline()
+                        // Android: this whole closure runs after the sheet's
+                        // content has already composed with the @State defaults,
+                        // and a Swift-side write schedules no recomposition
+                        // (#1180) — so tapping the minimized pill painted an
+                        // EMPTY "Morning Workout" while the restored exercises
+                        // sat in state, unrendered, until some unrelated window
+                        // event (IME, backgrounding) forced a pass. That reads
+                        // as "my workout was lost" (device-verified 2026-08-18,
+                        // build 110: the sheet showed the 7 restored exercises
+                        // the instant the app was backgrounded and foregrounded).
+                        // The template branch below doesn't need this — it's the
+                        // resume path's writes that land post-composition.
+                        // No-op on iOS, where uiRefreshKick is never wired.
+                        DriftPlatform.uiRefreshKick?()
                         return
                     }
                 }
@@ -1044,6 +1069,19 @@ struct ActiveWorkoutView: View {
     private func captureNotesBaseline() {
         notesAtOpen = Dictionary(exercises.map { ($0.name, $0.notes ?? "") },
                                  uniquingKeysWith: { first, _ in first })
+    }
+
+    /// Close this sheet, whichever way the presenter mounted it (#1219).
+    ///
+    /// `onClose` writes the presenter's own `isPresented` binding — the only
+    /// close that works when the workout is stacked on top of the Coach chat
+    /// sheet. The kick is what makes Compose notice that write (a bridged
+    /// `@Observable` write lands but schedules no recomposition, #1180); on
+    /// iOS it's nil and `dismiss()` alone does the work, exactly as before.
+    private func closeSheet() {
+        onClose?()
+        DriftPlatform.uiRefreshKick?()
+        dismiss()
     }
 
     /// Write notes the user edited mid-workout back to the source template

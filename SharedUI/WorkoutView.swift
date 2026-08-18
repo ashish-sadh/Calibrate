@@ -483,13 +483,13 @@ struct WorkoutView: View {
         // a first-class tab (own NavigationStack in ContentView); tabs don't
         // have "back".
         .sheet(isPresented: $showingNewWorkout) {
-            ActiveWorkoutView(template: selectedTemplate) {
+            ActiveWorkoutView(template: selectedTemplate, onClose: { showingNewWorkout = false }) {
                 selectedTemplate = nil
                 loadData()
             }
         }
         .sheet(isPresented: $showingPastWorkout) {
-            ActiveWorkoutView(pastDate: Date().addingTimeInterval(-86400)) { loadData() }
+            ActiveWorkoutView(pastDate: Date().addingTimeInterval(-86400), onClose: { showingPastWorkout = false }) { loadData() }
         }
         .sheet(isPresented: $showingVoiceLog) {
             // Voice/text exercise logging — reload history and reveal it so the
