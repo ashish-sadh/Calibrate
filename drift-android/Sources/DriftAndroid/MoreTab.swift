@@ -221,6 +221,14 @@ struct MoreTab: View {
             .navigationTitle("More")
             .onChange(of: unit) { _, newValue in
                 Preferences.weightUnit = newValue
+                // Today caches the FORMATTED weight strings, and since #1202 a
+                // plain arrival reload inside 30s is skipped — so without this
+                // the WEIGHT card, goal line and trend line all kept rendering
+                // the old unit until the guard aged out. iPhone dodges it by
+                // reading `Preferences.weightUnit` live in the view body
+                // (BodySummaryCardsRow:167); here the unit switch is a write
+                // like any other, so it forces.
+                TodayStore.shared.reload(force: true)
             }
             .task {
                 // One bridged hop, off `body` (every JNI call costs a frame).

@@ -133,7 +133,9 @@ enum WeightGranularity: String, CaseIterable {
             reload()
             // The dashboard's WEIGHT card reads its own store — without this
             // it kept showing the pre-log value until relaunch (#1090 sweep).
-            TodayStore.shared.reload()
+            // force: a weigh-in is exactly the write the 30s freshness guard
+            // must not swallow (#1202).
+            TodayStore.shared.reload(force: true)
         }
     }
 
@@ -150,7 +152,7 @@ enum WeightGranularity: String, CaseIterable {
         Task {
             try? AppDatabase.shared.deleteWeightEntry(id: id)
             reload()
-            TodayStore.shared.reload()
+            TodayStore.shared.reload(force: true)
         }
     }
 }

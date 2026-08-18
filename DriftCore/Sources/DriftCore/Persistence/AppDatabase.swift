@@ -159,9 +159,15 @@ extension AppDatabase {
         }
     }
 
+    /// Newest non-hidden weigh-in, via LIMIT 1 — the cheap form of
+    /// `fetchWeightEntries(from: nil).first`, which reads the whole table.
+    /// The `hidden` filter is what makes the two identical: without it this
+    /// returned entries the rest of the app treats as deleted (#1202).
     func fetchLatestWeight() throws -> WeightEntry? {
         try dbWriter.read { db in
-            try WeightEntry.order(Column("date").desc).fetchOne(db)
+            try WeightEntry.filter(Column("hidden") == false)
+                .order(Column("date").desc)
+                .fetchOne(db)
         }
     }
 }

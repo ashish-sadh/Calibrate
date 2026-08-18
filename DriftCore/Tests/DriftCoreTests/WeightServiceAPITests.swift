@@ -25,6 +25,40 @@ import Testing
     #expect(all == ["2026-07-01", "2026-07-02"], "probe dates must include the hidden row")
 }
 
+// MARK: - fetchLatestWeight (the dashboard's LIMIT-1 read)
+
+/// `WeightTrendService.refresh()` runs on every dashboard reload on both
+/// platforms — on Android across the JNI bridge — so it reads the newest
+/// weigh-in via LIMIT 1 instead of fetching the whole table and taking
+/// `.first` (#1202). The two must return the SAME entry, which means this one
+/// has to skip hidden (user-deleted) rows too. It did not, before the fix.
+@Test func fetchLatestWeightSkipsHiddenRowsAndMatchesTheFullFetch() throws {
+    let db = try AppDatabase.empty()
+    var older = WeightEntry(date: "2026-07-01", weightKg: 80, source: "manual")
+    var newest = WeightEntry(date: "2026-07-03", weightKg: 79, source: "manual")
+    try db.saveWeightEntry(&older)
+    try db.saveWeightEntry(&newest)
+
+    #expect(try db.fetchLatestWeight()?.date == "2026-07-03")
+    #expect(try db.fetchLatestWeight()?.weightKg == 79)
+
+    // Delete the newest — the dashboard must fall back to the older visible
+    // entry, not resurrect the deleted one.
+    let newestId = try #require(db.fetchWeightEntries().first { $0.date == "2026-07-03" }?.id)
+    try db.deleteWeightEntry(id: newestId)
+
+    #expect(try db.fetchLatestWeight()?.date == "2026-07-01",
+            "a hidden (deleted) row must never be the latest weight")
+    #expect(try db.fetchLatestWeight()?.id == db.fetchWeightEntries(from: nil).first?.id,
+            "LIMIT-1 read and full-table read must agree on the latest entry")
+}
+
+/// No weigh-ins at all — nil, not a crash and not a zero.
+@Test func fetchLatestWeightIsNilOnAnEmptyLog() throws {
+    let db = try AppDatabase.empty()
+    #expect(try db.fetchLatestWeight() == nil)
+}
+
 // MARK: - logWeight Validation
 
 @Test @MainActor func logWeightTooLowKgReturnsNil() async throws {

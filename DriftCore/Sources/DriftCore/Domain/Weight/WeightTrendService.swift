@@ -46,7 +46,11 @@ public final class WeightTrendService {
         let cal = Calendar.current
         let now = Date()
 
-        latestWeightKg = (try? db.fetchWeightEntries(from: nil))?.first?.weightKg
+        // LIMIT 1, not a full-table fetchAll then `.first` — this runs on every
+        // dashboard reload on both platforms, and on Android it crosses the JNI
+        // bridge (#1202). Same value: fetchLatestWeight applies the same
+        // `hidden == false` filter and the same date ordering.
+        latestWeightKg = (try? db.fetchLatestWeight())?.weightKg
 
         let cutoff = cal.date(byAdding: .day, value: -90, to: now)
         let cutoffStr = cutoff.map { DateFormatters.dateOnly.string(from: $0) }

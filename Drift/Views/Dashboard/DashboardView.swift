@@ -28,13 +28,8 @@ struct DashboardView: View {
     /// current weight. Powers the goal-aware color flip on the WEIGHT card
     /// in BodySummaryCardsRow. `.none` when no goal exists.
     var goalDirection: GoalDirection {
-        guard let goal = WeightGoal.load() else { return .none }
-        let currentKg = viewModel.latestWeight ?? viewModel.trendWeight ?? goal.startWeightKg
-        let deltaToTarget = currentKg - goal.targetWeightKg
-        if abs(deltaToTarget) < 0.1 {
-            return .maintain
-        }
-        return goal.isLosing(currentWeightKg: currentKg) ? .lose : .gain
+        GoalDirection.derive(goal: WeightGoal.load(),
+                             currentWeightKg: viewModel.latestWeight ?? viewModel.trendWeight)
     }
 
     /// Recomputes the 7-day Feedback banner visibility from Preferences. Called

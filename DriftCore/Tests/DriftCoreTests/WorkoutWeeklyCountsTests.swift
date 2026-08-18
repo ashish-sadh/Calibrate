@@ -85,6 +85,30 @@ private func deleteWorkoutById(_ id: Int64) {
             "weeks:1 must also see today's workout — this is the TodayTab path")
 }
 
+/// One fetch, both numbers. `weeklyWorkoutSnapshot()` replaced the
+/// `weeklyWorkoutCounts(weeks: 1)` + `workoutStreak()` pair on the Android
+/// dashboard, which read the same 500 rows twice per reload (#1202) — so it
+/// has to agree with both of the calls it replaced.
+@Test func weeklyWorkoutSnapshotMatchesTheTwoCallsItReplaced() throws {
+    let exercise = "Snapshot Row \(UUID().uuidString.prefix(6))"
+    let id = try seedWorkoutDated(DateFormatters.todayString, exercise: exercise)
+    defer { deleteWorkoutById(id) }
+
+    let snapshot = try WorkoutService.weeklyWorkoutSnapshot()
+    #expect(snapshot.thisWeek >= 1, "today's workout must land in the current week")
+
+    // Compared as `>=`/bounded rather than `==`: `AppDatabase.shared` is a real
+    // file and Swift Testing runs suites in parallel, so another suite's
+    // fixture can appear between two reads (the same reason the assertions
+    // above are `>=`).
+    let oneWeek = try WorkoutService.weeklyWorkoutCounts(weeks: 1).last?.count ?? 0
+    #expect(snapshot.thisWeek >= min(oneWeek, 1))
+    let streak = try WorkoutService.workoutStreak().current
+    #expect(snapshot.currentStreak >= 1, "a workout today means a live streak")
+    #expect(abs(snapshot.currentStreak - streak) <= 1,
+            "snapshot streak must track workoutStreak(); got \(snapshot.currentStreak) vs \(streak)")
+}
+
 // MARK: - startOfWeek
 //
 // THE Android failure mode (#1076): a workout's date parses to midnight while

@@ -177,13 +177,7 @@ extension BodySummaryCardsRow {
             )
         }
         let displayValue = unit.convert(fromKg: kg)
-        let detail: String?
-        if let rate = weeklyRateKg, rate.isFinite, abs(rate) > 0.001 {
-            let rateDisplay = unit.convert(fromKg: rate)
-            detail = String(format: "%+.2f %@/wk", rateDisplay, unit.displayName)
-        } else {
-            detail = nil
-        }
+        let detail: String? = unit.weeklyRateLine(fromKg: weeklyRateKg)
         let color: Color = goalAlignedColor(weeklyRateKg: weeklyRateKg, goalDirection: goalDirection)
         return BodySummaryCardPayload(
             label: "WEIGHT",
@@ -252,28 +246,12 @@ extension BodySummaryCardsRow {
         weeklyRateKg: Double?,
         goalDirection: GoalDirection
     ) -> Color {
-        guard let rate = weeklyRateKg, rate.isFinite, abs(rate) > 0.001 else {
-            return Theme.textPrimary
-        }
-        switch goalDirection {
-        case .lose:
-            return rate < 0 ? Theme.deficit : Theme.surplus
-        case .gain:
-            return rate > 0 ? Theme.deficit : Theme.surplus
-        case .maintain, .none:
-            return Theme.textPrimary
+        switch goalDirection.alignment(ofWeeklyRateKg: weeklyRateKg) {
+        case .aligned: return Theme.deficit
+        case .against: return Theme.surplus
+        case .neutral: return Theme.textPrimary
         }
     }
-}
-
-/// User's intended weight direction. Mapped from `WeightGoal.isLosing(...)`
-/// at the call site; broken out so the WEIGHT payload's color flip is
-/// testable without a stored `WeightGoal` fixture.
-enum GoalDirection: Equatable {
-    case lose
-    case gain
-    case maintain
-    case none
 }
 
 #if DEBUG

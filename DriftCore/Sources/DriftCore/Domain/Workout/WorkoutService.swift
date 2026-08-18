@@ -636,7 +636,14 @@ public enum WorkoutService {
     /// Workouts per week for last N weeks, ordered **oldest → newest** (so the
     /// current week is `.last`; see `WorkoutWeeklyCountsTests`).
     public static func weeklyWorkoutCounts(weeks: Int = 12) throws -> [(weekStart: Date, count: Int)] {
-        let workouts = try fetchWorkouts(limit: 500)
+        weeklyWorkoutCounts(weeks: weeks, from: try fetchWorkouts(limit: 500))
+    }
+
+    /// Bucketing half of `weeklyWorkoutCounts`, over an already-fetched history
+    /// — so a caller that needs two windows of the same data (this week AND the
+    /// 52-week streak) pays for one fetch instead of two. See
+    /// `weeklyWorkoutSnapshot()`.
+    static func weeklyWorkoutCounts(weeks: Int, from workouts: [Workout]) -> [(weekStart: Date, count: Int)] {
         let cal = Calendar.current
         let currentWeekStart = startOfWeek(for: Date(), calendar: cal)
 
@@ -663,6 +670,18 @@ public enum WorkoutService {
     public static func workoutStreak() throws -> (current: Int, longest: Int) {
         let counts = try weeklyWorkoutCounts(weeks: 52)
         return streak(fromWeeklyCounts: counts.map(\.count))
+    }
+
+    /// Both numbers a dashboard shows about workouts, from ONE fetch.
+    ///
+    /// `weeklyWorkoutCounts(weeks: 1)` + `workoutStreak()` back to back read the
+    /// same 500 rows twice — on Android that is two JNI round trips per Today
+    /// reload (#1202). It also retires a correct-by-accident call site: the
+    /// `weeks: 1` form happens to return a single element, so `.last` was "this
+    /// week" only as long as that stayed true (#1076).
+    public static func weeklyWorkoutSnapshot() throws -> (thisWeek: Int, currentStreak: Int) {
+        let counts = weeklyWorkoutCounts(weeks: 52, from: try fetchWorkouts(limit: 500))
+        return (counts.last?.count ?? 0, streak(fromWeeklyCounts: counts.map(\.count)).current)
     }
 
     /// Pure streak over chronological (oldest→newest) weekly workout counts. The CURRENT

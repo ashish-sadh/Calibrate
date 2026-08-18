@@ -41,6 +41,19 @@ public enum WeightUnit: String, CaseIterable, Codable, Sendable {
         }
     }
 
+    /// The dashboard WEIGHT card's caption: a signed weekly rate in this unit,
+    /// e.g. `-0.35 kg/wk`. nil when there is no usable trend (missing,
+    /// non-finite, or effectively zero) — both platforms then show no caption
+    /// rather than a "+0.00/wk" that reads as a measurement.
+    ///
+    /// Built by concatenation rather than `String(format: "%+.2f %@/wk", …)`:
+    /// `%@` is an ObjC bridge specifier and Skip's Foundation is not a place to
+    /// gamble on format-specifier parity (#1202).
+    public func weeklyRateLine(fromKg rate: Double?) -> String? {
+        guard let rate, rate.isFinite, abs(rate) > 0.001 else { return nil }
+        return String(format: "%+.2f", convert(fromKg: rate)) + " \(displayName)/wk"
+    }
+
     // MARK: - Set-weight field round-trip
 
     /// The two halves of a typed set-weight field. Storage is always lbs

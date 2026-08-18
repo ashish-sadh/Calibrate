@@ -43,7 +43,9 @@ struct TotalsRow: Sendable {
         // shared FoodLogViewModel); weight writes call reload() directly from
         // WeightStore. Observer lives as long as the process — no removal.
         _ = NotificationCenter.default.addObserver(forName: .foodEntryAdded, object: nil, queue: .main) { [weak self] _ in
-            Task { @MainActor in self?.reload() }
+            // force: a write just landed, so the 30s freshness guard below must
+            // not swallow it — that is exactly the #1075 failure mode.
+            Task { @MainActor in self?.reload(force: true) }
         }
     }
 
@@ -54,8 +56,37 @@ struct TotalsRow: Sendable {
     var fiberTarget = 25
     var foodEntries: [FoodEntry] = []
     var currentWeight = "—"
+    /// Rendered a step smaller and quieter than the number, exactly as iOS
+    /// splits `BodySummaryCardPayload.value` from `.unit` — Android used to
+    /// bake "81.4 kg" into one string, so the unit came out the same size and
+    /// took the goal-aware tint with it.
+    var currentWeightUnit: String?
+    /// The WEIGHT card's caption + value tint, mirroring iOS's
+    /// `BodySummaryCardsRow.weightPayload` — same DriftCore rule, so a rate
+    /// that reads green on the iPhone reads green here.
+    var weightRateLine: String?
+    var weightAlignment: GoalDirection.Alignment = .neutral
     var weekWorkouts = 0
     var streak = 0
+
+    // MARK: - Reload discipline (#1202)
+    //
+    // iOS skips the reload when the data is under 30s old
+    // (`DashboardView.swift:346`) and deleted its duplicate `onAppear` load for
+    // this exact reason. Android had no guard at all: every tab re-entry re-ran
+    // the whole pipeline — food totals, two weight fetches, the TDEE estimate,
+    // two 14-day aggregates, 500 workouts — with every one of those queries
+    // crossing the JNI bridge.
+    //
+    // These are stored properties on an `@Observable`, not `private`: Fuse
+    // can't bridge private state [skip_fuse_cannot_bridge_private_views_or_state].
+    // Nothing renders them, so no recomposition rides on them either.
+    var lastFullLoadAt = Date.distantPast
+    var isReloading = false
+    /// A `force` call that arrives mid-flight re-runs once on completion rather
+    /// than being dropped — so a food logged during a reload can never be
+    /// swallowed. iOS's `guard !isLoading` shape, plus the coalesce.
+    var pendingReload = false
 
     // MARK: - Coaching surfaces (#1130)
     //
@@ -113,8 +144,36 @@ struct TotalsRow: Sendable {
     var goalHasCustomMacros = false
     var targetIsLosing = true
 
-    func reload() {
+    /// `force` bypasses the freshness guard — pass it from anything that just
+    /// mutated data (a log, a delete, a sheet dismissal). Plain `reload()` is
+    /// for arrival paths (init, `.onAppear`), where a re-entry inside 30s is a
+    /// tab bounce, not new data.
+    ///
+    /// Deliberately NOT task-cancellation: the body has one `await` and never
+    /// checks `Task.isCancelled`, so cancelling the prior task would prevent
+    /// nothing while restructuring the async chain is what #1180 punishes on
+    /// Skip. Synchronous `@MainActor` guard + coalesce instead.
+    func reload(force: Bool = false) {
+        if isReloading {
+            if force { pendingReload = true }
+            return
+        }
+        if !force, Date().timeIntervalSince(lastFullLoadAt) < 30 { return }
+        isReloading = true
+        lastFullLoadAt = Date()
         Task {
+            // `defer`, not a bare assignment at the tail: nothing in the body
+            // returns early TODAY, but a future `guard` that did would wedge
+            // Today permanently — `isReloading` latched true has no self-heal.
+            // iOS guards the same flag the same way
+            // (DashboardViewModel.loadToday: `defer { isLoading = false }`).
+            defer {
+                isReloading = false
+                if pendingReload {
+                    pendingReload = false
+                    reload(force: true)
+                }
+            }
             await CoreResourcesBootstrap.warmUpDatabase()
             // FIRST, before anything reads a weight: `macroTargets()` below
             // reaches `TDEEEstimator.cachedOrSync()`, which asks
@@ -132,7 +191,10 @@ struct TotalsRow: Sendable {
             let t = FoodService.getDailyTotals()
             totals = TotalsRow(eaten: t.eaten, target: t.target, remaining: t.remaining,
                                proteinG: t.proteinG, carbsG: t.carbsG, fatG: t.fatG, fiberG: t.fiberG)
-            if let targets = WeightGoal.load()?.macroTargets(currentWeightKg: WeightTrendService.shared.trendWeight) {
+            // One load, one source: the macro targets and the WEIGHT card's
+            // goal direction below must not disagree about the stored goal.
+            let goal = WeightGoal.load()
+            if let targets = goal?.macroTargets(currentWeightKg: WeightTrendService.shared.trendWeight) {
                 proteinTarget = Int(targets.proteinG)
                 carbsTarget = Int(targets.carbsG)
                 fatTarget = Int(targets.fatG)
@@ -151,15 +213,28 @@ struct TotalsRow: Sendable {
             foodEntries = (try? AppDatabase.shared.fetchFoodEntries(for: DateFormatters.todayString)) ?? []
             let unit = Preferences.weightUnit
             weightUnit = unit
-            if let latest = WeightServiceAPI.getHistory(days: 365).sorted(by: { $0.date > $1.date }).first {
-                let value = unit == .kg ? latest.weightKg : latest.weightKg * 2.20462
-                currentWeight = String(format: "%.1f", value) + " \(unit.displayName)"
+            // What iPhone displays (`DashboardView:218`: latest ?? trend), off
+            // the service that was just refreshed — instead of reading the
+            // WHOLE weight table and sorting it in memory on every reload.
+            let svc = WeightTrendService.shared
+            if let kg = svc.latestWeightKg ?? svc.trendWeight {
+                currentWeight = String(format: "%.1f", unit.convert(fromKg: kg))
+                currentWeightUnit = unit.displayName
+                let dir = GoalDirection.derive(goal: goal, currentWeightKg: kg)
+                weightAlignment = dir.alignment(ofWeeklyRateKg: svc.weeklyRate)
+                weightRateLine = unit.weeklyRateLine(fromKg: svc.weeklyRate)
+            } else {
+                currentWeight = "—"
+                currentWeightUnit = nil
+                weightAlignment = .neutral
+                weightRateLine = nil
             }
             reloadDailyAverage()
-            // Oldest → newest, so the current week is `.last` (correct here only
-            // by accident of weeks:1 returning a single element — see #1076).
-            weekWorkouts = (try? WorkoutService.weeklyWorkoutCounts(weeks: 1))?.last?.count ?? 0
-            streak = (try? WorkoutService.workoutStreak())?.current ?? 0
+            // Both numbers off ONE `fetchWorkouts(limit: 500)`; the pair of
+            // calls this replaces read the same 500 rows twice (#1202).
+            let workouts = (try? WorkoutService.weeklyWorkoutSnapshot()) ?? (thisWeek: 0, currentStreak: 0)
+            weekWorkouts = workouts.thisWeek
+            streak = workouts.currentStreak
             // Last, and in this order, because both walk the food/weight/workout
             // history: the rings and meal list are what the user is waiting for,
             // and the coaching cards sit far enough down the scroll that landing
@@ -349,16 +424,16 @@ struct TodayTab: View {
             // fullScreenCover"), so a partial sheet with the dashboard dimmed
             // behind it and a drag grabber above the title read as a
             // different app.
-            .fullScreenCover(isPresented: $showingSnap, onDismiss: { store.reload() }) {
+            .fullScreenCover(isPresented: $showingSnap, onDismiss: { store.reload(force: true) }) {
                 SnapMealSheet()
             }
-            .sheet(isPresented: $showingDescribe, onDismiss: { store.reload() }) {
+            .sheet(isPresented: $showingDescribe, onDismiss: { store.reload(force: true) }) {
                 DescribeMealSheet()
             }
-            .sheet(isPresented: $showingSearch, onDismiss: { store.reload() }) {
+            .sheet(isPresented: $showingSearch, onDismiss: { store.reload(force: true) }) {
                 AndroidFoodSearchSheet(viewModel: foodLogVM, initialMealType: nil)
             }
-            .sheet(isPresented: $showingRecent, onDismiss: { store.reload() }) {
+            .sheet(isPresented: $showingRecent, onDismiss: { store.reload(force: true) }) {
                 AndroidRecentMealsSheet(viewModel: foodLogVM)
             }
             // Clear the seed on dismiss: `autoSubmit` fires whenever the prefill
@@ -753,7 +828,7 @@ struct TodayTab: View {
             onAdd: { showingSearch = true },
             onDelete: { id in
                 try? AppDatabase.shared.deleteFoodEntry(id: id)
-                store.reload()
+                store.reload(force: true)
             }
         )
     }
@@ -762,14 +837,36 @@ struct TodayTab: View {
 
     private var statTrio: some View {
         HStack(spacing: 10) {
-            statCard("WEIGHT", store.currentWeight, Theme.accent) { selectedTab = .body }
+            // Goal-aware, exactly as iOS colours the same card
+            // (`BodySummaryCardsRow.goalAlignedColor`): green when the weekly
+            // rate moves toward the goal, red when away, plain ink when there
+            // is no goal, no trend, or the goal is maintenance.
+            statCard("WEIGHT", store.currentWeight, Theme.accent,
+                     caption: store.weightRateLine,
+                     valueColor: weightValueColor,
+                     unit: store.currentWeightUnit) { selectedTab = .body }
             statCard("WORKOUTS", "\(store.weekWorkouts)", Theme.deficit, caption: "this week") { selectedTab = .workout }
             statCard("STREAK", store.streak > 0 ? "\(store.streak)w" : "—", Theme.stepsOrange) { selectedTab = .workout }
         }
     }
 
+    /// The only place the app maps `GoalDirection.Alignment` to ink — the rule
+    /// itself lives in DriftCore so iOS's `goalAlignedColor` reads the same one.
+    private var weightValueColor: Color {
+        switch store.weightAlignment {
+        case .aligned: return Theme.deficit
+        case .against: return Theme.surplus
+        case .neutral: return Theme.textPrimary
+        }
+    }
+
+    /// `color` is the dot; `valueColor` is the number. They differ only on
+    /// WEIGHT, where iOS tints the value by goal alignment and leaves the dot
+    /// on the accent.
     private func statCard(_ label: String, _ value: String, _ color: Color,
-                          caption: String? = nil, action: @escaping () -> Void) -> some View {
+                          caption: String? = nil, valueColor: Color = Theme.textPrimary,
+                          unit: String? = nil,
+                          action: @escaping () -> Void) -> some View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 4) {
@@ -778,11 +875,18 @@ struct TodayTab: View {
                         .foregroundStyle(Theme.textSecondary)
                         .tracking(0.6)
                 }
-                Text(value)
-                    .font(Theme.rounded(size: Theme.FontSize.title3).monospacedDigit())
-                    .foregroundStyle(Theme.textPrimary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
+                HStack(alignment: .firstTextBaseline, spacing: 3) {
+                    Text(value)
+                        .font(Theme.rounded(size: Theme.FontSize.title3).monospacedDigit())
+                        .foregroundStyle(valueColor)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                    if let unit {
+                        Text(unit)
+                            .font(.system(size: Theme.FontSize.tiny, weight: .semibold))
+                            .foregroundStyle(Theme.textTertiary)
+                    }
+                }
                 if let caption {
                     Text(caption).font(.caption2).foregroundStyle(Theme.textTertiary)
                 }
