@@ -374,6 +374,11 @@ that reads "invisible text on Android" should check #1228 before being filed as 
   counterpart (`:272-305`) is a `do/catch` with four distinct status strings and a 3s auto-clear. Plus no `availabilityStatus()` gate
   (states 0 and 2 both render a promise the device can't keep, [[android_hide_unwired_integration_ui]]) and it uses anchor-based
   `syncWeight()` where iOS deliberately uses `fullResyncWeight()` ("the buried Full Re-sync was the only escape from a poisoned anchor").
+  **FIXED + CLOSED 2026-08-18 (`9e92f49c`, build 107)** — polled companion state for the grant result, iOS's status strings with 3s
+  auto-clear, an "Open Health Connect settings" route out of the `USER_FIXED` dead end, full resync + real `syncBodyComposition()`, and the
+  availability gate. Emulator-proven "Imported 4 weight + 3 body-composition entries" on the FIRST tap. One residual: availability states 0
+  and 2 are code-verified only — this emulator's API-34+ *platform* Health Connect reports `SDK_AVAILABLE` even with the controller package
+  disabled, so neither branch is reachable on it.
   **#1208** P2 — **Body Rhythm / `SleepRecoveryView` (589 ln), the first row of iOS's HEALTH section, had no scoped issue at all**: #1068
   scopes only Biomarkers/Glucose/Cycle/Supplements, and the matrix mis-routed it to **#1061, the Today epic**, purely because the file
   lives in `Drift/Views/Dashboard/` — so the planner has never seen it. Filed with its two real blockers named up front (Charts absent on
