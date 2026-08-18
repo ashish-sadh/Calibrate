@@ -47,6 +47,13 @@ struct SharingView: View {
     /// telling people their friends were gone (#1251). Nothing may render an
     /// emptiness claim until this is true.
     @State var hubLoaded = false
+    #if os(Android)
+    /// Throttle stamp for the Android hub re-entry refresh (#1243). On Fuse a
+    /// nav-pushed destination is retained across pop/re-push, so `.task` never
+    /// re-fires and an accepted friend stays invisible until the process dies;
+    /// an `.onAppear` refresh (guarded by this stamp) restores iOS's behaviour.
+    @State var lastHubRefresh = Date.distantPast
+    #endif
     @State var incomingTemplates: [SharedTemplateDTO] = []
     @State var clientSessions: [LiveWorkoutDTO] = []
     // Per-row connection management (operator 2026-07-29: no way to unfriend,
@@ -109,6 +116,27 @@ struct SharingView: View {
         .background(Theme.background.ignoresSafeArea())
         .navigationTitle("Friends")
         .task { await bootstrap() }
+        // #1243: on Fuse a nav-pushed destination can be RETAINED across pop/
+        // re-push (skip-ui's Package.resolved floats, and older resolutions did
+        // exactly this — scout #26, build 100). A retained hub never re-runs
+        // `.task`, so a friendship accepted while the app runs stays invisible
+        // until the process dies. Refetch on re-entry instead. This is inert
+        // when skip-ui re-creates the destination (the common case today: `stage`
+        // is `.loading` on a fresh instance, so the `.task` path owns that load);
+        // it only bites when the instance survived with `stage == .ready`. The
+        // repaint itself is the kick in bootstrap()/refreshHub() — Fuse won't
+        // schedule a recomposition for the late async writes on its own (#1180).
+        // iOS re-creates every push and needs none of this.
+        // NOTE for #1253's executor: once `connections(maxAge:)` lands, route
+        // this re-entry through `maxAge: 0`, or a cached read inside the 30s TTL
+        // would re-introduce exactly this staleness.
+        #if os(Android)
+        .onAppear {
+            if stage == .ready, Date().timeIntervalSince(lastHubRefresh) > 5 {
+                Task { await refreshHub() }
+            }
+        }
+        #endif
         .sheet(isPresented: $showingInvite) {
             InviteShareSheet(username: svc.currentUsername ?? "")
         }
@@ -830,6 +858,10 @@ struct SharingView: View {
     // MARK: - Actions
 
     private func bootstrap() async {
+        // #1243/#1180: the async @State writes below (stage, and refreshHub's
+        // conns/requests/…) don't schedule a Compose recomposition on Fuse, so
+        // paint them once this returns. nil-op on iOS.
+        defer { DriftPlatform.uiRefreshKick?() }
         // A stored session might be stale (account deleted / token dead after a
         // reset) — validate it first so we recover to the picker instead of a
         // credential-refresh error. Skips the network when signed out.
@@ -854,6 +886,11 @@ struct SharingView: View {
     }
 
     private func refreshHub() async {
+        // #1243/#1180: repaint after the fetches land (Fuse won't on its own).
+        defer { DriftPlatform.uiRefreshKick?() }
+        #if os(Android)
+        lastHubRefresh = Date()   // #1243: stamp the re-entry throttle
+        #endif
         let me = svc.currentSession?.userID
         // EVERY fetch starts here, concurrently. My own profile and the inbox
         // used to run sequentially after the fan-out was already consumed, so
