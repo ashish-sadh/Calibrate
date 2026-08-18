@@ -597,6 +597,77 @@ import Testing
     #expect(await vm.consistencyData.count == 60, "Should have 60 days of consistency data")
 }
 
+// MARK: - Repaint kicks (#1257)
+//
+// Every mutation on the Android Supplements screen was invisible: the write
+// landed in SQLite, the screen never repainted, and a dead-looking Add button
+// invited a second tap — which inserted a duplicate row. `loadSupplements()`
+// is the funnel every mutation ends in, so the repaint kick belongs there.
+
+/// Reference box — `DriftPlatform.uiRefreshKick` stores an escaping closure,
+/// so a plain captured local can't be counted from inside it.
+private final class SupplementKickCounter {
+    var count = 0
+}
+
+@MainActor @Test func supplementLoadKicksTheUIOnce() async throws {
+    let db = try AppDatabase.empty()
+    let vm = SupplementViewModel(database: db)
+
+    // The seam is process-global; restore it in `defer` so a leaked closure
+    // can't outlive this test.
+    let kicks = SupplementKickCounter()
+    DriftPlatform.uiRefreshKick = { kicks.count += 1 }
+    defer { DriftPlatform.uiRefreshKick = nil }
+
+    vm.loadSupplements()
+    #expect(kicks.count == 1, "One load schedules exactly one repaint")
+}
+
+@MainActor @Test func supplementAddAndToggleEachKickTheUI() async throws {
+    let db = try AppDatabase.empty()
+    let vm = SupplementViewModel(database: db)
+
+    let kicks = SupplementKickCounter()
+    DriftPlatform.uiRefreshKick = { kicks.count += 1 }
+    defer { DriftPlatform.uiRefreshKick = nil }
+
+    vm.addCustomSupplement(name: "Creatine", dosage: "5", unit: "g")
+    #expect(vm.supplements.count == 1, "One add inserts exactly one row")
+    #expect(kicks.count == 1, "Adding repaints the list, the counter and the streak")
+
+    let id = try #require(vm.supplements.first?.id)
+
+    kicks.count = 0
+    vm.toggleTaken(supplementId: id)
+    #expect(vm.isTaken(id), "The write lands")
+    #expect(kicks.count == 1, "…and the row repaints in place")
+
+    kicks.count = 0
+    vm.toggleTaken(supplementId: id)
+    #expect(!vm.isTaken(id), "Untaking lands too")
+    #expect(kicks.count == 1, "…and repaints")
+}
+
+@MainActor @Test func supplementCopyYesterdayKicksTheUI() async throws {
+    let db = try AppDatabase.empty()
+    let vm = SupplementViewModel(database: db)
+    vm.addCustomSupplement(name: "Vitamin D", dosage: "5000", unit: "IU")
+    let id = try #require(vm.supplements.first?.id)
+
+    let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date())!
+    try db.toggleSupplementTaken(supplementId: id, date: DateFormatters.dateOnly.string(from: yesterday))
+    vm.loadSupplements()
+
+    let kicks = SupplementKickCounter()
+    DriftPlatform.uiRefreshKick = { kicks.count += 1 }
+    defer { DriftPlatform.uiRefreshKick = nil }
+
+    vm.copyYesterday()
+    #expect(vm.takenCount == 1, "Yesterday's taken supplement lands on today")
+    #expect(kicks.count == 1, "…and the list repaints without reopening the sheet")
+}
+
 // MARK: - Dashboard ViewModel Integration Tests
 
 @Test func dashboardLoadsTodayNutrition() async throws {

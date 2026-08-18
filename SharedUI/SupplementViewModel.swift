@@ -52,6 +52,23 @@ final class SupplementViewModel {
         self.database = database
     }
 
+    /// The single funnel every mutation on this screen routes through —
+    /// `toggleTaken`, `copyYesterday`, `addCustomSupplement`, the row's ⊗
+    /// delete and the edit sheet's save all end here, as does the initial
+    /// `onAppear` load.
+    ///
+    /// The kick is what makes those mutations VISIBLE on Android (#1257). The
+    /// writes always landed — a tapped row really did log, a tapped Add really
+    /// did insert — but bridged `@Observable` writes never schedule a Compose
+    /// recomposition, so the list, the `0/N taken today` counter and the streak
+    /// all sat on stale data until the sheet was closed and reopened. A
+    /// dead-looking Add button then invites a second tap, and every tap inserts
+    /// another row: this repaint gap is what produced the duplicate Creatine
+    /// rows that leaked into the Today nudge and from there into the Coach
+    /// prompt. Kick LAST, so the recomposition composes against freshly loaded
+    /// data, and OUTSIDE the `do/catch` so a failed load repaints too — frozen
+    /// stale state on the error path is the same lie. nil on iOS by
+    /// construction (#1180/#1254 precedent), so no gate.
     func loadSupplements() {
         do {
             supplements = try database.fetchActiveSupplements()
@@ -61,6 +78,7 @@ final class SupplementViewModel {
         } catch {
             Log.supplements.error("Failed to load: \(error.localizedDescription)")
         }
+        DriftPlatform.uiRefreshKick?()
     }
 
     func loadConsistency() {

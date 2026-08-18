@@ -48,7 +48,10 @@ struct SupplementsTabView: View {
                         Button {
                             viewModel.copyYesterday()
                         } label: {
-                            Label("Same as yesterday", systemImage: "doc.on.doc")
+                            // Unmapped in skip-ui's native set, so raw it drew the
+                            // warning triangle; sym() already carries the duplicate
+                            // → arrow.clockwise.circle mapping.
+                            Label("Same as yesterday", systemImage: sym("doc.on.doc"))
                                 .font(.caption.weight(.medium))
                                 .foregroundStyle(Theme.accent)
                         }
@@ -63,10 +66,31 @@ struct SupplementsTabView: View {
                                 if let id = supplement.id { viewModel.toggleTaken(supplementId: id) }
                             } label: {
                                 HStack(spacing: 12) {
+                                    #if os(Android)
+                                    // "circle" is deliberately unmapped in sym() — Material
+                                    // has no outline circle and a checkmark fallback reads as
+                                    // the OPPOSITE state — so an un-taken row drew the warning
+                                    // triangle. Third call site of the same trap after
+                                    // ActiveWorkoutView's set-done toggle and the exercise
+                                    // picker's row selection; same fix, draw the real ring.
+                                    if viewModel.isTaken(supplement.id ?? 0) {
+                                        Image(systemName: sym("checkmark.circle.fill"))
+                                            .font(.title3)
+                                            .foregroundStyle(Theme.deficit)
+                                            .accessibilityHidden(true)
+                                    } else {
+                                        // `.stroke` not `.strokeBorder` — SkipUI's
+                                        // strokeBorder overload set is ambiguous here.
+                                        Circle()
+                                            .stroke(Color.secondary, lineWidth: 1.5)
+                                            .frame(width: 21, height: 21)
+                                    }
+                                    #else
                                     Image(systemName: viewModel.isTaken(supplement.id ?? 0) ? "checkmark.circle.fill" : "circle")
                                         .font(.title3)
                                         .foregroundStyle(viewModel.isTaken(supplement.id ?? 0) ? Theme.deficit : .secondary)
                                         .accessibilityHidden(true)
+                                    #endif
 
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(supplement.name)
@@ -86,9 +110,26 @@ struct SupplementsTabView: View {
                                             SupplementService.deleteSupplement(id: id)
                                             viewModel.loadSupplements()
                                         } label: {
-                                            Image(systemName: "xmark.circle.fill").font(.caption2).foregroundStyle(Theme.textTertiary)
+                                            // Unmapped on Android without sym(): this was the
+                                            // only ⊗ in the codebase bypassing it, and it drew
+                                            // Material's "missing icon" placeholder. The map
+                                            // already has xmark.circle.fill → xmark and passes
+                                            // through on Darwin (FoodTabView:1093 idiom).
+                                            Image(systemName: sym("xmark.circle.fill")).font(.caption2).foregroundStyle(Theme.textTertiary)
                                         }
                                         .buttonStyle(.plain)
+                                        // A caption2 glyph dumps as a 21dp node on Fuse — under
+                                        // the touch floor — and a nested .plain Button inside
+                                        // the row Button carries no hit shape of its own, so
+                                        // the tap landed on the row and toggled instead of
+                                        // deleting (#1174 recipe,
+                                        // harness_dead_synthetic_tap_means_contentshape).
+                                        // Android-gated: un-gated it would shift iOS row
+                                        // geometry.
+                                        #if os(Android)
+                                        .frame(width: 28, height: 28)
+                                        .contentShape(Rectangle())
+                                        #endif
                                         .accessibilityLabel(Text("Delete \(supplement.name)"))
                                     }
 
