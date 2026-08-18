@@ -32,7 +32,13 @@ struct DescribeMealSheet: View {
     /// Meal slot the caller detected ("log 2 eggs for breakfast"). Nil falls
     /// back to the time-of-day slot, matching the un-seeded flow.
     let initialMealType: MealType?
-    let onLogged: () -> Void
+    /// Presenter-owned close, mirroring `ActiveWorkoutView(onClose:)`. When the
+    /// Coach presents this sheet it is stacked on the chat's OWN sheet, and
+    /// `dismiss()` never fires two levels deep on Fuse (#1219) — so the
+    /// presenter hands in the write to the `isPresented` binding it owns. Nil
+    /// for the single-level presenters (Today's Describe chip, food search),
+    /// where `dismiss()` is the working close.
+    var onClose: (() -> Void)?
 
     @State var foodLog = FoodLogViewModel()
     @State var phase: Phase = .input
@@ -40,6 +46,11 @@ struct DescribeMealSheet: View {
     @State var items: [PhotoLogItem] = []
     @State var logTime = Date()
     @State var mealType: MealType = .snack
+    /// #1271: the close repaints over the bridge, which can take a beat, and
+    /// the human answer to a frame that didn't move is a second tap — which
+    /// wrote a second identical diary row. Reset in `onAppear` (#1106) or Fuse
+    /// resurrects it `true` and the next log turn is permanently inert.
+    @State var didLog = false
 
     enum Phase: Equatable {
         case input, parsing, reviewing
@@ -49,11 +60,11 @@ struct DescribeMealSheet: View {
     init(initialQuery: String? = nil,
          initialItems: [PhotoLogItem]? = nil,
          initialMealType: MealType? = nil,
-         onLogged: @escaping () -> Void = {}) {
+         onClose: (() -> Void)? = nil) {
         self.initialQuery = initialQuery
         self.initialItems = initialItems
         self.initialMealType = initialMealType
-        self.onLogged = onLogged
+        self.onClose = onClose
     }
 
     var body: some View {
@@ -61,7 +72,7 @@ struct DescribeMealSheet: View {
             VStack(spacing: 0) {
                 // In-content chrome (#1089 pattern) — sheet nav bar off.
                 HStack {
-                    Button("Cancel") { dismiss() }.foregroundStyle(Theme.accent)
+                    Button("Cancel") { closeSheet() }.foregroundStyle(Theme.accent)
                     Spacer()
                 }
                 .padding(.horizontal, 20)
@@ -83,6 +94,7 @@ struct DescribeMealSheet: View {
                 phase = .input
                 items = []
                 logTime = Date()
+                didLog = false
                 if let seeded = initialItems, !seeded.isEmpty {
                     // Coach already resolved these — land straight in the review.
                     enterReview(seeded, mealType: initialMealType)
@@ -302,6 +314,8 @@ struct DescribeMealSheet: View {
     // MARK: - Log
 
     private func logAll() {
+        guard !didLog else { return }
+        didLog = true
         let loggedAt = DateFormatters.iso8601.string(from: foodLog.anchoredToSelectedDay(logTime))
         let batch = items.map { item in
             FoodLogViewModel.BatchFoodItem(
@@ -317,7 +331,18 @@ struct DescribeMealSheet: View {
                 servings: 1)
         }
         foodLog.quickAddBatch(batch)
-        onLogged()
+        closeSheet()
+    }
+
+    /// The one way out of this sheet. `dismiss()` alone is inert when the sheet
+    /// is stacked on the Coach's chat sheet (#1219), so the presenter's binding
+    /// write comes first, then the kick — a bridged `@Observable` write lands
+    /// but schedules no Compose recomposition on its own (#1180). `dismiss()`
+    /// stays for the single-level presenters and iOS, where `onClose` is nil
+    /// and the kick is never wired.
+    private func closeSheet() {
+        onClose?()
+        DriftPlatform.uiRefreshKick?()
         dismiss()
     }
 }

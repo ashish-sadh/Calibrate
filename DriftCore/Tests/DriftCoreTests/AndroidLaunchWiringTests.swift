@@ -121,6 +121,55 @@ import Testing
         }
     }
 
+    // MARK: - Stacked-sheet close wiring
+
+    /// Every food sheet Drift Coach presents on Android is a SECOND-level
+    /// sheet — `AIChatView` is itself presented as a `.sheet` by the shell
+    /// (`ContentView.swift`) and by the Today-tab coach entry — and two levels
+    /// deep on Fuse `dismiss()` never fires (#1219). The close has to come from
+    /// the presenter, which is the only party holding the `isPresented`
+    /// binding, exactly as `ActiveWorkoutView(onClose:)` already does one sheet
+    /// above these.
+    ///
+    /// #1271 is what the gap costs: `log 2 eggs` wrote its `food_entry` row,
+    /// then called an inert `dismiss()`. The sheet did not move, the CTA stayed
+    /// armed, and the human response — tap it again — wrote a SECOND identical
+    /// row. Silent duplication of logged food is a user-data defect, and this
+    /// is the primary AI food-logging path.
+    ///
+    /// The pin is a count equality rather than a list of call sites so it
+    /// carries when #1138/#1139/#1222 re-point these presentations at their
+    /// ported sheets: whatever sheet lands there still owes a presenter close.
+    @Test func everyCoachFoodSheetHandsThePresenterAClose() throws {
+        let source = try Self.strippingLineComments(Self.sharedUIFile("AIChatView.swift"))
+        let block = try #require(Self.androidBlock(of: source),
+                                 "AIChatView must keep exactly one `#elseif os(Android)` block — the Android food sheets live in it")
+        let presentations = Self.occurrences(of: "DescribeMealSheet(", in: block)
+        #expect(presentations > 0,
+                "The Android block must still present the shared review sheet — if it stopped, re-point this pin at whatever replaced it rather than deleting it")
+        #expect(Self.occurrences(of: "onClose:", in: block) == presentations,
+                "All \(presentations) DescribeMealSheet presentations in AIChatView's Android block must pass onClose: — dismiss() is inert in a sheet-over-sheet (#1219), so a missing close leaves the CTA armed and a re-tap duplicates the diary row (#1271)")
+    }
+
+    /// `DescribeMealSheet` must route BOTH exits — Cancel and post-log —
+    /// through the single `closeSheet()`, which fires the presenter's close,
+    /// then the kick, then `dismiss()`. The kick is not optional: a bridged
+    /// `@Observable` write lands but schedules no Compose recomposition on its
+    /// own (#1180), so the binding write alone can leave the sheet painted for
+    /// ~1s — the exact window the user re-taps into.
+    ///
+    /// One parenthesized `dismiss()` in the file = the one inside
+    /// `closeSheet()`. The `@Environment(\.dismiss) var dismiss` declaration
+    /// does not match this form, so a second occurrence means an exit went
+    /// back to calling `dismiss()` directly.
+    @Test func describeMealSheetClosesThroughTheOneCloseWithAKick() throws {
+        let source = try Self.strippingLineComments(Self.sharedUIFile("DescribeMealSheet.swift"))
+        #expect(Self.occurrences(of: "dismiss()", in: source) == 1,
+                "DescribeMealSheet must call dismiss() in exactly one place (closeSheet()) — a bare dismiss() on Cancel or logAll() is dead when the Coach stacks this sheet (#1271)")
+        #expect(source.contains("DriftPlatform.uiRefreshKick?()"),
+                "closeSheet() must kick Compose after the presenter's binding write — the write alone schedules no recomposition (#1180) and the sheet stays painted long enough to be re-tapped (#1271)")
+    }
+
     // MARK: - Source access
 
     /// Drop `//` line comments so structural assertions see code, not prose.
@@ -132,6 +181,26 @@ import Testing
                 return line[line.startIndex..<commentStart.lowerBound]
             }
             .joined(separator: "\n")
+    }
+
+    private static func sharedUIFile(_ name: String) throws -> String {
+        let url = projectRoot().appendingPathComponent("SharedUI/\(name)")
+        return try String(contentsOf: url, encoding: .utf8)
+    }
+
+    /// The `#elseif os(Android)` arm, up to the `#endif` that closes it.
+    /// Nil when the arm is missing or appears more than once — either way the
+    /// caller's assumption about where the Android sheets live is broken.
+    private static func androidBlock(of source: String) -> String? {
+        guard occurrences(of: "#elseif os(Android)", in: source) == 1,
+              let start = source.range(of: "#elseif os(Android)"),
+              let end = source.range(of: "#endif", range: start.upperBound..<source.endIndex)
+        else { return nil }
+        return String(source[start.upperBound..<end.lowerBound])
+    }
+
+    private static func occurrences(of needle: String, in haystack: String) -> Int {
+        haystack.components(separatedBy: needle).count - 1
     }
 
     private static func androidAppSource() throws -> String {

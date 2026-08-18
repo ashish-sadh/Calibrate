@@ -230,9 +230,11 @@ struct AIChatView: View {
         // the iOS sheets follows in #1138/#1139; only barcode still degrades.
         .sheet(isPresented: $vm.showingFoodSearch, onDismiss: { vm.mealLogRevision += 1 }) {
             if let resolved = vm.foodSearchResolvedItem {
-                DescribeMealSheet(initialItems: [resolved], initialMealType: vm.foodSearchMealType)
+                DescribeMealSheet(initialItems: [resolved], initialMealType: vm.foodSearchMealType,
+                                  onClose: { vm.showingFoodSearch = false; vm.mealLogRevision += 1 })
             } else {
-                DescribeMealSheet(initialQuery: vm.foodSearchQuery)
+                DescribeMealSheet(initialQuery: vm.foodSearchQuery,
+                                  onClose: { vm.showingFoodSearch = false; vm.mealLogRevision += 1 })
             }
         }
         .sheet(isPresented: $vm.showingRecipeBuilder, onDismiss: {
@@ -240,7 +242,8 @@ struct AIChatView: View {
             vm.pendingRecipeName = ""
         }) {
             DescribeMealSheet(initialItems: vm.pendingRecipeItems.map { PhotoLogItem(from: $0) },
-                              initialMealType: MealType(rawValue: vm.pendingRecipeName.lowercased()))
+                              initialMealType: MealType(rawValue: vm.pendingRecipeName.lowercased()),
+                              onClose: { vm.showingRecipeBuilder = false })
         }
         .sheet(isPresented: $vm.showingManualFoodEntry, onDismiss: {
             vm.pendingManualFoodEntry = nil
@@ -253,16 +256,16 @@ struct AIChatView: View {
                     name: prefill.name, grams: 0, calories: Double(prefill.calories),
                     proteinG: prefill.proteinG, carbsG: prefill.carbsG, fatG: prefill.fatG,
                     fiberG: prefill.fiberG, confidence: .medium)],
-                    onLogged: { vm.showingManualFoodEntry = false })
+                    onClose: { vm.showingManualFoodEntry = false })
             } else {
                 DescribeMealSheet(initialQuery: vm.pendingManualFoodEntry?.name ?? "",
-                                  onLogged: { vm.showingManualFoodEntry = false })
+                                  onClose: { vm.showingManualFoodEntry = false })
             }
         }
         .sheet(isPresented: $vm.showingMealReview, onDismiss: { vm.pendingMealReviewItems = [] }) {
             // "Log my usual lunch" → the recalled meal, ready to review and log.
             DescribeMealSheet(initialItems: vm.pendingMealReviewItems,
-                              onLogged: {
+                              onClose: {
                                   vm.showingMealReview = false
                                   vm.mealLogRevision += 1
                               })
