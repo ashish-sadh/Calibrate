@@ -88,6 +88,54 @@ final class FoodSearchGoldSetTests: XCTestCase {
         XCTAssertTrue(found, "'panner' should spell-correct to find paneer entries")
     }
 
+    /// #1193: the Indian synonym table is the whole reason the raw
+    /// `searchFoods` primitive was the wrong entry point on Android —
+    /// `LOWER(name) LIKE '%dahi%'` never matches a row named "Yogurt", so the
+    /// Food tab returned nothing for the queries an Indian user actually types.
+    /// Both platforms call `searchFood` now, so this pins it for both.
+    func testIndianSynonymsResolveToTheEnglishFood() {
+        let cases: [(query: String, expectedKeyword: String)] = [
+            ("curd", "yogurt"),
+            ("dahi", "yogurt"),
+            ("thayir", "yogurt"),
+            ("raita", "yogurt"),
+            ("kozhi", "chicken"),
+        ]
+        var correct = 0
+        for (query, keyword) in cases {
+            let results = FoodService.searchFood(query: query)
+            if results.prefix(3).contains(where: { $0.name.lowercased().contains(keyword) }) {
+                correct += 1
+            } else {
+                print("MISS (synonym): '\(query)' → top3=\(results.prefix(3).map(\.name))")
+            }
+        }
+        print("📊 Indian synonyms: \(correct)/\(cases.count)")
+        XCTAssertGreaterThanOrEqual(correct, cases.count - 1, "At most 1 synonym miss")
+    }
+
+    /// Typos users actually make. iPhone corrected these all along; Android's
+    /// stand-in dropped them on the floor until #1193.
+    func testCommonTyposCorrect() {
+        let cases: [(query: String, expectedKeyword: String)] = [
+            ("chiken", "chicken"),
+            ("yogart", "yogurt"),
+            ("bananna", "banana"),
+            ("brocoli", "broccoli"),
+        ]
+        var correct = 0
+        for (query, keyword) in cases {
+            let results = FoodService.searchFood(query: query)
+            if results.prefix(5).contains(where: { $0.name.lowercased().contains(keyword) }) {
+                correct += 1
+            } else {
+                print("MISS (typo): '\(query)' → top5=\(results.prefix(5).map(\.name))")
+            }
+        }
+        print("📊 Typo correction: \(correct)/\(cases.count)")
+        XCTAssertGreaterThanOrEqual(correct, cases.count - 1, "At most 1 typo miss")
+    }
+
     // MARK: - Case Insensitivity
 
     func testCaseInsensitiveSearch() {

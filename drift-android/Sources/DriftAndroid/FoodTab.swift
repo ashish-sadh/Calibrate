@@ -163,29 +163,58 @@ struct AndroidFoodSearchSheet: View {
         }
     }
 
-    /// Live search as the user types — 200ms debounce, cancelled per
-    /// keystroke by `.task(id:)`; Skip's cancellation is cooperative, so the
-    /// guards after each await are what discard a stale run.
+    /// Live search as the user types — 200ms debounce, restarted per keystroke
+    /// by `.task(id:)`; Skip's cancellation is cooperative, so what actually
+    /// discards a stale run is the `FoodSearchGeneration` check after each
+    /// await (see the type's note).
     private func liveSearch() async {
         let q = query.trimmingCharacters(in: .whitespaces)
+        FoodSearchGeneration.shared.newest = q
         guard q.count >= 2 else {
             results = []
             return
         }
         try? await Task.sleep(nanoseconds: 200_000_000)
-        guard !Task.isCancelled else { return }
+        guard !Task.isCancelled, FoodSearchGeneration.shared.newest == q else { return }
         // The DB is warm before FoodTabView ever presents this sheet
         // (FoodTab gates on warmUpDatabase), so this is belt-and-braces
         // for the .openFoodSearch path (#1075 lesson: an early search that
         // beats warm-up throws inside try? → silent empty results).
         await CoreResourcesBootstrap.warmUpDatabase()
-        guard !Task.isCancelled else { return }
-        let hits = await onDB {
-            (try? AppDatabase.shared.searchFoods(query: q, limit: 25)) ?? []
+        guard !Task.isCancelled, FoodSearchGeneration.shared.newest == q else { return }
+        // Same ranked entry point iPhone uses (FoodSearchView:134-139) — spell
+        // correction, Indian synonyms (curd/dahi/thayir → yogurt), exact-match
+        // tiering, personal-history rank and search-miss telemetry all live
+        // inside it. The raw `searchFoods` primitive has none of them (#1193).
+        // Stays off-main: searchFood is `nonisolated` precisely so per-keystroke
+        // callers can run it here (#946), and it does strictly more DB work.
+        let hits = await onDB { () -> [Food] in
+            var r = FoodService.searchFood(query: q)
+            // Fuzzy fallback: no hits → retry without the last char (iOS parity;
+            // on iPhone this lives in the view, not the service).
+            if r.isEmpty && q.count >= 4 {
+                r = FoodService.searchFood(query: String(q.dropLast()))
+            }
+            return r
         }
-        guard !Task.isCancelled else { return }
+        guard !Task.isCancelled, FoodSearchGeneration.shared.newest == q else { return }
         results = hits
     }
+}
+
+/// Newest query the user has typed, shared across the debounced search runs.
+/// `.task(id:)` restarts on every keystroke, but Skip's cancellation is
+/// cooperative: a stale run can finish AFTER the current one and overwrite
+/// good results. Observed 2026-08-17 (#1193) once search started spell-
+/// correcting — typing "chiken" at speed left the intermediate "chike" on
+/// screen, which fuzzy-corrects to "chile", so the list showed three Chile
+/// dishes for a chicken query. Publishing only when the run still owns the
+/// newest query makes correctness independent of cancellation semantics.
+/// Not `private`: Skip cannot bridge private declarations.
+@MainActor
+final class FoodSearchGeneration {
+    static let shared = FoodSearchGeneration()
+    var newest = ""
 }
 
 // MARK: - Interim recent-meals sheet
