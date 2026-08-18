@@ -49,6 +49,10 @@ let logger: Logger = Logger(subsystem: "com.drift.health", category: "DriftAndro
             // URLSession parks non-cancellably on Skip, so RemoteLLMBackend
             // (Coach/meal/photo/scan) routes through the OkHttp facade instead.
             DriftPlatform.httpSession = AndroidHTTPSession()
+            // IMMEDIATE-notify seam only (#1162). Nothing on Android mirrors
+            // iOS's NotificationService.refreshScheduledAlerts() — SCHEDULED
+            // reminders need a portable planner + a delivery seam, which is
+            // #1146's scope, not this wiring's (#1214).
             DriftPlatform.notifier = AndroidLocalNotifier()
             // Image-in seam (#1128): system Photo Picker → downscaled JPEG Data
             // via the polled ImagePickerFacade Activity-result bridge.
@@ -86,6 +90,21 @@ let logger: Logger = Logger(subsystem: "com.drift.health", category: "DriftAndro
         HealthConnectService.bridgeSmokeTest()
         Task { @MainActor in
             await CoreResourcesBootstrap.warmUpDatabase()
+            // Two more DriftApp.init() mirrors (#1214 — same class as #1209 /
+            // #1212). Both ride `Preferences`, which on Android reaches
+            // AppDatabase through DbKeyValueStore, so they belong HERE, after
+            // warm-up — never in onInit (see that method's own comment).
+            //
+            // Stamp the install date once so the 7-day Feedback activation
+            // banner (#759) has a stable anchor. The anchor is "first launch",
+            // which happens exactly once — a later port cannot backfill it.
+            // Idempotent: only writes when unset. (DriftApp.swift:26)
+            Preferences.seedInstallDateIfNeeded()
+            // One-time coach-voice pref migrations (#968). A native Android
+            // install is unlikely to carry the poisoned pre-#937 value, but a
+            // restored cross-platform backup (#1094) can — this is the heal.
+            // Idempotent. (DriftApp.swift:32)
+            Preferences.migrateCoachVoiceIfNeeded()
             // Ship whatever the last session queued. After warm-up so the
             // flusher never races the DB open (#1112 lesson).
             TelemetryService.shared.event(TelemetryEvent.appOpen)
@@ -142,6 +161,19 @@ let logger: Logger = Logger(subsystem: "com.drift.health", category: "DriftAndro
 
     /* SKIP @bridge */public func onPause() {
         logger.debug("onPause")
+        // Snapshot the in-flight Coach conversation (#1214, mirror of
+        // DriftApp.swift:64). AIChatViewModel (SharedUI, live on Android)
+        // listens for this and writes convState to conversation_state.json, so
+        // an Android process death mid-flow resumes instead of forgetting.
+        // Android kills backgrounded apps routinely — iOS gets this for free
+        // from its scenePhase handler and Android had nothing.
+        //
+        // Posted from onPause ONLY: onPause always precedes onStop, and iOS
+        // posts once per backgrounding — double-posting would just re-encode
+        // the same snapshot. Deliberately ahead of the isWarm gate below: the
+        // listener touches no database, only in-memory state and a JSON file,
+        // so a backgrounding during a cold start must not lose the snapshot.
+        NotificationCenter.default.post(name: .saveConversationState, object: nil)
         // Drain the telemetry outbox on the way out (mirror of the iOS
         // scenePhase flush in DriftApp) — a session's events ship together.
         //

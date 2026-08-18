@@ -24,6 +24,21 @@ enum CoreResourcesBootstrap {
         // (#1108) here, before isWarm flips, so views that gate on warmth read
         // persisted settings/goal directly instead of transient defaults.
         (DriftPlatform.keyValueStore as? DbKeyValueStore)?.prime()
+        // #941 idempotent upgrade: back-fills muscle slugs + pose assets onto
+        // template custom exercises registered by older builds. iOS runs it at
+        // every launch (DriftApp.swift:99); Android had it only as a side
+        // effect of DefaultTemplates.load() (DefaultTemplates.swift:68), i.e.
+        // only if the user tapped "load package" in WorkoutView — so templates
+        // from an older build kept missing muscles and photos forever (#1214).
+        // Here rather than on the main actor: it decodes the ~1 MB exercises.json
+        // catalog, which install() above has already staged, so the read is warm
+        // and the cost lands off-main, before isWarm opens the UI gates.
+        //
+        // Ordered before the prune to mirror iOS (:99 then :100). That is
+        // mirror-fidelity, not a data dependency — both are idempotent and
+        // operate on disjoint sets (template customs vs pre-#1079 raw-utterance
+        // customs), so don't "fix" the order later thinking one feeds the other.
+        DefaultTemplates.registerCustomExercises()
         // #1107: one-time cleanup of legacy raw-utterance custom exercises
         // (pre-#1079 parser bug) — needs the KV cache primed above.
         WorkoutService.pruneLegacyUtteranceCustomExercisesOnce()

@@ -11,13 +11,15 @@ import Testing
 /// (`DriftTests/DriftAppLaunchTests.swift`); Android cannot, and "cannot run it"
 /// is exactly why the gap keeps shipping.
 ///
-/// It has now shipped twice. #1209: `ToolRegistration.registerAll()` was never
-/// called, so every Coach turn answered "unknown tool". #1212:
+/// It has now shipped three times. #1209: `ToolRegistration.registerAll()` was
+/// never called, so every Coach turn answered "unknown tool". #1212:
 /// `WeightTrendService.shared.refresh()` and `TDEEEstimator.shared.refresh()`
 /// were never called, so `TDEEEstimator.current` stayed nil and food targets +
 /// AI reasoning computed against the hardcoded 2000 kcal fallback
 /// (`FoodService.swift:374`, `:794`, `AIRuleEngine.swift:182`) on every entry
-/// path that didn't visit the Today tab first.
+/// path that didn't visit the Today tab first. #1214 stopped waiting for
+/// occurrence #4 and diffed the whole of `DriftApp.init()` + its launch `.task`
+/// + its scenePhase handlers against the shell, finding four more.
 ///
 /// The rule the two incidents share: `DriftAndroidApp` must mirror *every*
 /// `DriftApp.init()` launch call, not just the `DriftPlatform` seams.
@@ -34,13 +36,21 @@ import Testing
          "#1212 — without it TDEEEstimator.current stays nil and food targets fall back to a flat 2000 kcal"),
         ("DriftPlatform.uiRefreshKick =",
          "#1180 — without it bridged @Observable writes never schedule a Compose recomposition, so a tap that already wrote its rows leaves the frame unchanged; one Coach confirm tap read as dead and became three duplicate food_entry rows"),
+        ("Preferences.seedInstallDateIfNeeded()",
+         "#1214 — the #759 Feedback activation banner anchors on install date, and the anchor is 'first launch', which happens exactly once; skip it and no later port can ever backfill it"),
+        ("Preferences.migrateCoachVoiceIfNeeded()",
+         "#1214 — the one-time heal for the poisoned pre-#937 coachVoiceEnabled pref (#968); a restored cross-platform backup (#1094) can carry the bad value onto Android, and the migration is the only thing that clears it"),
+        ("DefaultTemplates.registerCustomExercises()",
+         "#1214 — the idempotent #941 upgrade that back-fills muscle slugs + pose assets onto template custom exercises; without it at launch it fires only as a side effect of DefaultTemplates.load(), i.e. only if the user taps 'load package', so older-build templates keep missing muscles and photos"),
+        ("NotificationCenter.default.post(name: .saveConversationState",
+         "#1214 — AIChatViewModel (SharedUI, live on Android) listens for this and snapshots the conversation; without a post on backgrounding, routine Android process death loses the in-flight Coach context that iOS keeps via scenePhase"),
     ]
 
     @Test func androidShellMakesEveryRequiredLaunchCall() throws {
-        let source = try Self.androidAppSource()
+        let source = try Self.androidShellSource()
         for required in Self.requiredLaunchCalls {
             #expect(source.contains(required.call),
-                    "DriftAndroidApp.swift must call \(required.call) at startup — \(required.why)")
+                    "The Android shell must call \(required.call) at startup — \(required.why)")
         }
     }
 
@@ -94,8 +104,30 @@ import Testing
     }
 
     private static func androidAppSource() throws -> String {
+        try shellFile("DriftAndroidApp.swift")
+    }
+
+    /// Every file the launch sequence is spread across, concatenated.
+    ///
+    /// The containment scan reads THIS, not `androidAppSource()` alone: not all
+    /// of the sequence lives in the app delegate. The #941 catalog upgrade runs
+    /// inside `CoreResourcesBootstrap.warmTask` because it has to be off-main
+    /// (#1214), and a scan that only knew about `DriftAndroidApp.swift` would
+    /// call a correctly-wired call site missing.
+    ///
+    /// The ordering and no-early-return tests deliberately keep reading
+    /// `androidAppSource()`: their range logic assumes one file's line order,
+    /// and neither of their target strings may ever legitimately appear in the
+    /// bootstrap.
+    private static func androidShellSource() throws -> String {
+        try shellSourceFiles.map { try shellFile($0) }.joined(separator: "\n")
+    }
+
+    private static let shellSourceFiles = ["DriftAndroidApp.swift", "CoreResourcesBootstrap.swift"]
+
+    private static func shellFile(_ name: String) throws -> String {
         let url = projectRoot()
-            .appendingPathComponent("drift-android/Sources/DriftAndroid/DriftAndroidApp.swift")
+            .appendingPathComponent("drift-android/Sources/DriftAndroid/\(name)")
         return try String(contentsOf: url, encoding: .utf8)
     }
 
