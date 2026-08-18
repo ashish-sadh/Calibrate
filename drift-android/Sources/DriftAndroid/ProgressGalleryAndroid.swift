@@ -16,6 +16,13 @@ struct ProgressGalleryAndroid: View {
     @State var entries: [Entry] = []
     @State var loaded = false
     @State var picking = false
+    /// Viewer state (#1187). `viewerEntries` is the photo-bearing subset iOS
+    /// hands the viewer (`ProgressGalleryView.swift:23,61`); both it and the
+    /// weight map are computed in the same off-main pass as the cards.
+    @State var viewerEntries: [ProgressEntry] = []
+    @State var weightByDate: [String: Double] = [:]
+    @State var viewerDate: String?
+    @State var viewerPose: ProgressPose = .front
 
     struct Entry: Identifiable, Sendable {
         let id: String            // date
@@ -24,6 +31,14 @@ struct ProgressGalleryAndroid: View {
         let photos: [ProgressPhoto]
         let weightDisplay: String?
         let measurementLine: String?
+    }
+
+    /// Everything one `load()` pass produces. Bundled so the cards, the viewer's
+    /// date list and the weight map all come off a single sanitized read.
+    struct Payload: Sendable {
+        let cards: [Entry]
+        let viewerEntries: [ProgressEntry]
+        let weightByDate: [String: Double]
     }
 
     var body: some View {
@@ -60,6 +75,23 @@ struct ProgressGalleryAndroid: View {
                     }
                     .accessibilityLabel("Add a progress photo")
                 }
+            }
+        }
+        // The gallery's ONLY presentation modifier — stacking two on one view is
+        // the Fuse trap this screen already ate (see WeightSheetRequest). The
+        // builder is guarded because Fuse builds cover content eagerly.
+        .fullScreenCover(isPresented: Binding(
+            get: { viewerDate != nil },
+            set: { if !$0 { viewerDate = nil } }
+        )) {
+            if let date = viewerDate {
+                ProgressPhotoViewerAndroid(
+                    entries: viewerEntries, weightByDate: weightByDate,
+                    startDate: date, startPose: viewerPose,
+                    // iOS routes this to AddProgressEntryView; the Android edit
+                    // flow lands with #1166, so the viewer hides its pencil and
+                    // this stays an unused seam rather than a dead tap.
+                    onEdit: { _ in })
             }
         }
         .task { await load() }
@@ -120,6 +152,15 @@ struct ProgressGalleryAndroid: View {
                         ProgressPhotoImage(filename: photo.filename)
                             .frame(width: 74, height: 98)
                             .clipShape(RoundedRectangle(cornerRadius: Theme.radiusSmall))
+                            // A thumbnail renders as content, not a Button, so
+                            // without contentShape the tap lands nowhere at all
+                            // (#1187 — the screen after the tap was pixel-identical).
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                viewerPose = photo.poseEnum ?? .front
+                                viewerDate = entry.date
+                            }
+                            .accessibilityLabel("Open \(entry.dateDisplay) photo")
                     }
                 }
             }
@@ -141,7 +182,7 @@ struct ProgressGalleryAndroid: View {
         await CoreResourcesBootstrap.warmUpDatabase()
         let unit = Preferences.weightUnit
         let inInches = unit == .lbs
-        let rows: [Entry] = await withCheckedContinuation { continuation in
+        let payload: Payload = await withCheckedContinuation { continuation in
             DispatchQueue.global(qos: .userInitiated).async {
                 // The same source iOS reload() reads (ProgressGalleryView:288):
                 // a day's photos AND that day's measurement. Grouping raw photos
@@ -149,10 +190,11 @@ struct ProgressGalleryAndroid: View {
                 let raw = (try? AppDatabase.shared.fetchProgressEntries()) ?? []
                 let weights = (try? AppDatabase.shared.fetchWeightEntries()) ?? []
 
-                // fetchProgressEntries() is documented newest-first; keep its order.
-                let built = raw.compactMap { entry -> Entry? in
-                    // Drop photo rows whose file is missing (a partial restore)
-                    // so a card never shows a blank thumbnail — iOS :289-293.
+                // Sanitize once — iOS :289-293. Photo rows whose file is missing
+                // (a partial restore) are dropped so neither a card thumbnail nor
+                // a compare pane can come up blank. fetchProgressEntries() is
+                // documented newest-first; keep its order.
+                let sanitized: [ProgressEntry] = raw.compactMap { entry -> ProgressEntry? in
                     let posed = entry.photos
                         .filter { ProgressPhotoPaths.fileExists($0.filename) }
                         .sorted { lhs, rhs in
@@ -160,8 +202,20 @@ struct ProgressGalleryAndroid: View {
                                 < (ProgressPose.allCases.firstIndex(of: rhs.poseEnum ?? .front) ?? 0)
                         }
                     guard !posed.isEmpty || entry.measurement?.isEmpty == false else { return nil }
+                    return ProgressEntry(date: entry.date, photos: posed, measurement: entry.measurement)
+                }
 
-                    let weightDisplay = Self.nearestWeightKg(for: entry.date, in: weights).map { value -> String in
+                // iOS :295-309 — the viewer reads raw kg and formats per pose, so
+                // the map is built once and the card's string derives from it.
+                var weightMap: [String: Double] = [:]
+                for entry in sanitized {
+                    if let kg = Self.nearestWeightKg(for: entry.date, in: weights) {
+                        weightMap[entry.date] = kg
+                    }
+                }
+
+                let built = sanitized.map { entry -> Entry in
+                    let weightDisplay = weightMap[entry.date].map { value -> String in
                         let shown = inInches ? value * 2.20462 : value
                         return String(format: "%.1f %@", shown, unit.displayName)
                     }
@@ -171,14 +225,19 @@ struct ProgressGalleryAndroid: View {
                     }
                     return Entry(id: entry.date, date: entry.date,
                                  dateDisplay: Self.formatDate(entry.date),
-                                 photos: posed,
+                                 photos: entry.photos,
                                  weightDisplay: weightDisplay,
                                  measurementLine: line)
                 }
-                continuation.resume(returning: built)
+                continuation.resume(returning: Payload(
+                    cards: built,
+                    viewerEntries: sanitized.filter(\.hasPhotos),
+                    weightByDate: weightMap))
             }
         }
-        entries = rows
+        entries = payload.cards
+        viewerEntries = payload.viewerEntries
+        weightByDate = payload.weightByDate
         loaded = true
     }
 
