@@ -20,6 +20,27 @@ extension AppDatabase {
     }
 
     private static func makeShared() -> AppDatabase {
+        #if os(Android)
+        // Tripwire (#1240): the first touch of `AppDatabase.shared` runs the
+        // whole migrate+seed synchronously inside a blocking `swift_once`. On
+        // Android that must always happen on the detached warm task
+        // (CoreResourcesBootstrap) — a main-thread first touch parks the run
+        // loop in pread64 and Android ANRs on "Input dispatching timed out".
+        // Fault-log always (grep-able in logcat since #1081), assert in debug
+        // so a future launch-path caller fails loudly in the next emulator
+        // drive instead of shipping a racy ANR.
+        if Thread.isMainThread {
+            Log.database.fault("AppDatabase first opened on the Android MAIN thread — ANR risk (#1240); every launch-path task must await CoreResourcesBootstrap.warmUpDatabase() first")
+            assertionFailure("AppDatabase.shared first touch on Android main thread (#1240)")
+        } else {
+            // Positive half of the tripwire: without this, a silent tripwire is
+            // ambiguous (ordering fixed, or `Thread.isMainThread` under-reporting
+            // on Android?). Paired with the mainThread=true line that
+            // CoreResourcesBootstrap.beginWarmUp logs from Application.onCreate,
+            // seeing this line proves the predicate works AND the open is off-main.
+            Log.database.info("AppDatabase first opened off the main thread — #1240 ordering holds")
+        }
+        #endif
         do {
             return try openAndSeed()
         } catch {

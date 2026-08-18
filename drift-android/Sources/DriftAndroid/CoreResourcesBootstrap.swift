@@ -30,6 +30,25 @@ enum CoreResourcesBootstrap {
         await MainActor.run { isWarm = true }
     }
 
+    /// Kick the one-time warm task WITHOUT awaiting it (#1240).
+    ///
+    /// `warmTask` is a lazy static, so the off-main open does not begin until
+    /// something first touches it. Call this once the DriftPlatform seams are
+    /// installed (end of `onInit`) so the open is already in flight before any
+    /// MainActor lifecycle task can run — that shrinks the window in which an
+    /// un-audited path could become the first toucher of `AppDatabase.shared`
+    /// on the main thread. Idempotent; this does NOT replace the ordering
+    /// contract — every launch-path task must still `await warmUpDatabase()`
+    /// before touching the database.
+    static func beginWarmUp() {
+        // Logged with the calling thread on purpose: this runs from
+        // Application.onCreate (main), so it is the positive control for the
+        // main-thread tripwire in AppDatabase.makeShared — that one must
+        // report OFF-main on the same launch (#1240).
+        Log.app.info("Warm-up kicked from mainThread=\(Thread.isMainThread) — #1240")
+        _ = warmTask
+    }
+
     /// Force the first AppDatabase open (migrate + food seed) OFF the main
     /// thread — @MainActor services (FoodService/WeightServiceAPI) are then
     /// cheap to call on main because the heavy one-time work is done.

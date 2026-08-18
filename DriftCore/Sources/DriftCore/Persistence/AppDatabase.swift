@@ -904,17 +904,23 @@ extension AppDatabase {
         // only change via an app update, which bumps CFBundleVersion. If we
         // already seeded for THIS build and the table is populated, there is
         // nothing to do. Guards:
-        //   • foodCount>0 keeps in-memory test DBs (which start empty) seeding.
+        //   • the food-row existence probe keeps in-memory test DBs (which
+        //     start empty) seeding.
         //   • hashPresent honors the "clear drift_foods_json_hash to force a
         //     reseed" contract (factoryReset + tests) — a cleared hash means
         //     someone wants the full delete+reinsert to run, so don't short it.
         let hashPresent = !(UserDefaults.standard.string(forKey: Self.foodsJSONHashKey) ?? "").isEmpty
         if !bundleVersion.isEmpty, hashPresent,
            bundleVersion == UserDefaults.standard.string(forKey: Self.foodsSeedVersionKey) {
-            let foodCount = try dbWriter.read { db in
-                try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM food") ?? 0
+            // Existence probe, not COUNT(*) (#1240): `count > 0` and "a row
+            // exists" are the same predicate, but COUNT(*) walks the whole
+            // food b-tree — that `sqlite3BtreeCount` under a cold page cache
+            // is the exact frame the Android startup ANR parked in. LIMIT 1
+            // stops at the first row.
+            let hasFood = try dbWriter.read { db in
+                try Row.fetchOne(db, sql: "SELECT 1 FROM food LIMIT 1") != nil
             }
-            if foodCount > 0 { return }
+            if hasFood { return }
         }
 
         guard let url = Bundle.module.url(forResource: "foods", withExtension: "json"),
@@ -925,7 +931,8 @@ extension AppDatabase {
         // Hash-gate: skip the whole loop when the bundle bytes are identical
         // to the last successful seed AND the food table is non-empty. Turns
         // production cold start from ~2.5k SQL queries into a single
-        // ~50µs SHA-256 hash + tiny COUNT(*) when nothing changed.
+        // ~50µs SHA-256 hash + a single-row existence probe when nothing
+        // changed.
         //
         // The hash includes CFBundleVersion so every TestFlight bump forces
         // a one-time reseed even when foods.json bytes are unchanged. Users
@@ -933,7 +940,7 @@ extension AppDatabase {
         // was the signal — JSON byte equality alone isn't enough since we
         // sometimes fix downstream code that affects how JSON is interpreted.
         //
-        // The `foodCount > 0` guard matters for tests (each in-memory
+        // The food-row existence guard matters for tests (each in-memory
         // `AppDatabase.empty()` gets a fresh food table, so without this
         // check the UserDefaults hash set by an earlier test would make
         // later tests skip seeding and see an empty DB).
@@ -943,10 +950,11 @@ extension AppDatabase {
             .map { String(format: "%02x", $0) }
             .joined()
         let lastHash = UserDefaults.standard.string(forKey: Self.foodsJSONHashKey) ?? ""
-        let foodCount = try dbWriter.read { db in
-            try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM food") ?? 0
+        // Existence probe rather than COUNT(*) — see #1240 note above.
+        let hasFood = try dbWriter.read { db in
+            try Row.fetchOne(db, sql: "SELECT 1 FROM food LIMIT 1") != nil
         }
-        if foodCount > 0 && currentHash == lastHash {
+        if hasFood && currentHash == lastHash {
             // Bytes unchanged — record the version token so the NEXT launch takes
             // the fast path above and skips this read+hash entirely. (#947)
             UserDefaults.standard.set(bundleVersion, forKey: Self.foodsSeedVersionKey)

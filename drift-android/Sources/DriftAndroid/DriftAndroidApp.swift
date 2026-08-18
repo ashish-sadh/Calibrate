@@ -70,6 +70,14 @@ let logger: Logger = Logger(subsystem: "com.drift.health", category: "DriftAndro
             // so it is safe to run synchronously here; PhotoLogTool is
             // iOS-only (Keychain + CloudVision) and intentionally absent.
             ToolRegistration.registerAll()
+            // #1240: start the off-main DB open NOW. `warmTask` is a lazy
+            // static, so until this line the open didn't even begin until the
+            // first awaiter was scheduled — leaving a window in which a
+            // MainActor lifecycle task could be the first toucher of
+            // AppDatabase.shared and eat openAndSeed() on the main thread.
+            // Last line in this block on purpose: the warm task consumes
+            // DriftPlatform.keyValueStore (prime()), installed above.
+            CoreResourcesBootstrap.beginWarmUp()
         }
     }
 
@@ -112,25 +120,52 @@ let logger: Logger = Logger(subsystem: "com.drift.health", category: "DriftAndro
         // Cheap anchored catch-up — picks up weights logged in other apps
         // while Drift was backgrounded (mirrors the iOS foreground sync).
         Task { @MainActor in
+            // #1240: warm-up FIRST. syncWeight() writes through
+            // AppDatabase.shared, so on a cold start this task races
+            // onLaunch's warm-up and the winner pays the open+seed on main.
+            await CoreResourcesBootstrap.warmUpDatabase()
             guard let health = DriftPlatform.health, health.isAvailable else { return }
             _ = try? await health.syncWeight()
         }
         // Social alerts + leaderboard publish — the same shared entry point the
         // iOS foreground runs, so the sync policy can't diverge between
         // platforms (SocialSync).
-        Task { @MainActor in await SocialSync.onForeground() }
+        Task { @MainActor in
+            // #1240 (the proven ANR): SocialAlertPoll.run()'s first statement is
+            // `SharingService.shared`, whose `db: AppDatabase = .shared` default
+            // argument forces the lazy open — openAndSeed() -> seedFoodsFromJSON()
+            // -> COUNT(*) -> pread64, all inside nested swift_once on main.
+            await CoreResourcesBootstrap.warmUpDatabase()
+            await SocialSync.onForeground()
+        }
     }
 
     /* SKIP @bridge */public func onPause() {
         logger.debug("onPause")
         // Drain the telemetry outbox on the way out (mirror of the iOS
         // scenePhase flush in DriftApp) — a session's events ship together.
-        TelemetryService.shared.flush()
+        //
+        // #1240: `TelemetryService.shared` is built as
+        // `TelemetryService(db: AppDatabase.shared, …)`, so merely TOUCHING the
+        // lazy static before warm-up force-opens the DB on main — and Android
+        // backgrounds within ~1s of a cold start (also on every Skip
+        // permission-relaunch). Skipping pre-warm is lossless: no event of THIS
+        // session can exist yet (onLaunch's `event(appOpen)` runs after its own
+        // await), and flush() swallows errors by design, so a previous
+        // session's leftovers simply ride the next onLaunch flush.
+        MainActor.assumeIsolated {
+            guard CoreResourcesBootstrap.isWarm else { return }
+            TelemetryService.shared.flush()
+        }
     }
 
     /* SKIP @bridge */public func onStop() {
         logger.debug("onStop")
-        TelemetryService.shared.flush()
+        // #1240 — same pre-warm gate as onPause above.
+        MainActor.assumeIsolated {
+            guard CoreResourcesBootstrap.isWarm else { return }
+            TelemetryService.shared.flush()
+        }
     }
 
     /* SKIP @bridge */public func onDestroy() {

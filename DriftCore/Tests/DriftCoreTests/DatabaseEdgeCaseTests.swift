@@ -467,14 +467,74 @@ private func seedDay(_ db: AppDatabase, date: String, meals: [(type: String, kca
             "the copied entry landed under today's breakfast with servings preserved")
 }
 
-// MARK: - #998: restore invalidates the seed fast-path so foods re-sync
+// MARK: - Food-seed guards (#998 invalidation, #1240 guard truth-table)
 
-@Test func invalidateFoodSeedCacheClearsSeedKeys() {
-    UserDefaults.standard.set("somehash", forKey: "drift_foods_json_hash")
-    UserDefaults.standard.set("335", forKey: "drift_foods_seed_version")
-    AppDatabase.invalidateFoodSeedCache()
-    #expect(UserDefaults.standard.string(forKey: "drift_foods_json_hash") == nil)
-    #expect(UserDefaults.standard.string(forKey: "drift_foods_seed_version") == nil)
+/// Serialized as a suite: every test in here mutates the two process-global
+/// seed tokens in `UserDefaults.standard`, so running them concurrently would
+/// let one clear the keys the other is mid-assert on.
+@Suite(.serialized) struct FoodSeedGuardTests {
+    static let hashKey = "drift_foods_json_hash"
+    static let versionKey = "drift_foods_seed_version"
+
+    // #998: restore invalidates the seed fast-path so foods re-sync.
+    @Test func invalidateFoodSeedCacheClearsSeedKeys() {
+        UserDefaults.standard.set("somehash", forKey: Self.hashKey)
+        UserDefaults.standard.set("335", forKey: Self.versionKey)
+        AppDatabase.invalidateFoodSeedCache()
+        #expect(UserDefaults.standard.string(forKey: Self.hashKey) == nil)
+        #expect(UserDefaults.standard.string(forKey: Self.versionKey) == nil)
+    }
+
+    // #1240: both `seedFoodsFromJSON()` guards ask "does a food row exist?"
+    // rather than `SELECT COUNT(*) FROM food` — the full b-tree walk
+    // (`sqlite3BtreeCount`) the Android startup ANR was parked in under a cold
+    // page cache. `count > 0` and "a row exists" are the same predicate, and
+    // this pins that equivalence at the two contracts that ride on it: an
+    // EMPTY table must always seed (#947 — in-memory test DBs start empty),
+    // and a POPULATED table with matching tokens must never re-run the
+    // ~5k-row refresh loop.
+    @Test func seedGuardsKeyOffRowExistenceNotCount() throws {
+        let defaults = UserDefaults.standard
+        let savedHash = defaults.string(forKey: Self.hashKey)
+        let savedVersion = defaults.string(forKey: Self.versionKey)
+        defer {
+            if let savedHash { defaults.set(savedHash, forKey: Self.hashKey) }
+            else { defaults.removeObject(forKey: Self.hashKey) }
+            if let savedVersion { defaults.set(savedVersion, forKey: Self.versionKey) }
+            else { defaults.removeObject(forKey: Self.versionKey) }
+        }
+
+        // A cleared hash is the documented "force a full reseed" contract
+        // (#998 factoryReset). Start there so a real seed records the REAL
+        // tokens for this bundle — the values both guards compare against.
+        defaults.removeObject(forKey: Self.hashKey)
+        defaults.removeObject(forKey: Self.versionKey)
+        let seeded = try AppDatabase.empty()
+        try seeded.seedFoodsFromJSON()
+        let fullSeedCount = try seeded.foodCount()
+        #expect(fullSeedCount > 1000, "a cleared hash must run the full seed; got \(fullSeedCount)")
+        #expect(!(defaults.string(forKey: Self.hashKey) ?? "").isEmpty,
+                "a successful seed records the hash token")
+
+        // (a) The tokens now say "this build is already seeded" — an EMPTY
+        //     table must seed anyway. Both guards fall through on the
+        //     existence probe exactly as they did on `count > 0`.
+        let emptyTable = try AppDatabase.empty()
+        try emptyTable.seedFoodsFromJSON()
+        #expect(try emptyTable.foodCount() == fullSeedCount,
+                "matching tokens must not stop an EMPTY food table from seeding")
+
+        // (b) Populated + matching tokens → return without re-running the
+        //     refresh loop. One sentinel row satisfies "a row exists"; a
+        //     re-seed would insert thousands more.
+        let populated = try AppDatabase.empty()
+        var sentinel = Food(name: "Sentinel1240", category: "test",
+                            servingSize: 100, servingUnit: "g", calories: 111)
+        try populated.writer.write { try sentinel.insert($0) }
+        try populated.seedFoodsFromJSON()
+        #expect(try populated.foodCount() == 1,
+                "a single existing row must short-circuit the seed")
+    }
 }
 
 // #1032: "what did I eat" returns a meal-by-meal listing + total, not just totals.
