@@ -58,7 +58,13 @@ struct SharingView: View {
     @State var confirmingRemoveID: String? = nil
     // Discovery (#1162): the invite link people actually connect with, and the
     // public-profile switch.
-    @State var discoverable = true
+    /// `nil` until `isDiscoverable()` answers. A settings control whose whole
+    /// job is to report the account's state must never render a value it hasn't
+    /// loaded: defaulting to `true` spent the first seconds of every open
+    /// telling an opted-out account "People can find you by @username" (#1217),
+    /// and fail-open is the wrong direction for a privacy switch. Unknown and
+    /// listed have to look different.
+    @State var discoverable: Bool? = nil
     @State var showingInvite = false
     /// Set when a `drift://add/<handle>` link resolved to a real person, so the
     /// hub can offer to connect without making them search.
@@ -480,7 +486,10 @@ struct SharingView: View {
 
             // The public-profile switch. Off = reachable by your link only.
             Toggle(isOn: Binding(
-                get: { discoverable },
+                // Unknown rests at OFF — the non-permissive position — and the
+                // row is disabled until the real value lands, so nobody reads
+                // the placeholder as an answer.
+                get: { discoverable ?? false },
                 set: { on in
                     discoverable = on
                     Task { await run { try await svc.setDiscoverable(on) } }
@@ -488,12 +497,11 @@ struct SharingView: View {
             )) {
                 VStack(alignment: .leading, spacing: 1) {
                     Text("Findable by search").font(.caption)
-                    Text(discoverable
-                         ? "People can find you by @username"
-                         : "Only people with your invite link can find you")
+                    Text(Self.discoverableSubtitle(for: discoverable))
                         .font(.caption2).foregroundStyle(Theme.textTertiary)
                 }
             }
+            .disabled(discoverable == nil)
             .tint(Theme.accent)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -881,8 +889,11 @@ struct SharingView: View {
         pendingIDs = Set((await pending ?? []).map {
             $0.requesterId == me ? $0.addresseeId : $0.requesterId
         })
-        // Absent reads as listed, matching the column default.
-        discoverable = (await listed) ?? true
+        // Only a real answer moves this. `isDiscoverable()` already applies the
+        // absent-row default internally, so `nil` here means the check FAILED —
+        // and a failed check must not repaint as either concrete state, least of
+        // all as "you are listed" (#1217).
+        if let listed = await listed { discoverable = listed }
         myProfile = (await mine)?.first
         // Who is waiting on a reply, keyed by person.
         let inbox = (await inboxRows) ?? []
@@ -1013,6 +1024,10 @@ struct SharingView: View {
         username = ""; searchText = ""
         searchResults = []; requests = []; requestSenders = [:]; conns = []
         hubLoaded = false
+        // Back to unknown — otherwise the signed-out account's concrete value
+        // becomes the next account's first paint: the same lie, one account
+        // later.
+        discoverable = nil
         incomingTemplates = []
         clientSessions = []; requestedIDs = []; searchedOnce = false
     }
@@ -1043,6 +1058,17 @@ struct SharingView: View {
             return "You've reached \(limit) connections — remove one to add someone new."
         }
     }
+    /// What the Findable-by-search row says under its title. Three states, not
+    /// two: `nil` is "we haven't asked yet", and it must read as neither
+    /// promise (#1217).
+    static func discoverableSubtitle(for state: Bool?) -> String {
+        switch state {
+        case .some(true): return "People can find you by @username"
+        case .some(false): return "Only people with your invite link can find you"
+        case .none: return "Checking\u{2026}"
+        }
+    }
+
     /// Your one-line tagline — what a stranger reads next to your @handle in
     /// search.
     ///
