@@ -238,8 +238,16 @@ struct SharingView: View {
                                         .background(Theme.accent, in: Capsule())
                                 }
                             }
+                            #if os(Android)
+                            // skip-ui maps no chat glyph and the paperplane
+                            // stand-in read as SEND on this row (#1233) —
+                            // drawn bubble instead (CameraGlyph.swift).
+                            ChatBubbleShape().fill(Theme.chartTrend)
+                                .frame(width: 13, height: 13)
+                            #else
                             Image(systemName: sym("bubble.left.fill"))
                                 .font(.caption).foregroundStyle(Theme.chartTrend)
+                            #endif
                             Image(systemName: sym("chevron.right"))
                                 .font(.caption2).foregroundStyle(Theme.textTertiary)
                         }
@@ -1029,8 +1037,16 @@ struct SharingView: View {
                 editingTagline = true
             } label: {
                 HStack(spacing: 6) {
+                    #if os(Android)
+                    // "quote.bubble" escaped a triangle into face.smiling in
+                    // #1194 — a SMILEY on the tagline row, still a different
+                    // object (#1233). iOS's name is an outline, so stroke.
+                    ChatBubbleShape().stroke(Theme.textTertiary, lineWidth: 1.7)
+                        .frame(width: 12, height: 12)
+                    #else
                     Image(systemName: sym("quote.bubble"))
                         .font(.caption2).foregroundStyle(Theme.textTertiary)
+                    #endif
                     Text(myTagline ?? "Add a tagline — what you're into")
                         .font(.caption)
                         .foregroundStyle(myTagline == nil ? Theme.textTertiary : Theme.textSecondary)

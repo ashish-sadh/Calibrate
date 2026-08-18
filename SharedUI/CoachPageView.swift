@@ -128,8 +128,17 @@ struct CoachPageView: View {
     var messageRow: some View {
         NavigationLink { ChatView(peer: coach, relationship: "coach") } label: {
             HStack(spacing: 10) {
+                #if os(Android)
+                // skip-ui maps no chat glyph of any kind — this name had no
+                // sym() case at all and rendered the warning triangle (#1233).
+                // One bubble, not two: ChatBubbleShape is what every other
+                // message row on Android draws, and a second overlapping
+                // bubble is illegible at 16pt.
+                ChatBubbleShape().fill(Theme.chartTrend).frame(width: 16, height: 16)
+                #else
                 Image(systemName: sym("bubble.left.and.bubble.right.fill"))
                     .font(.subheadline).foregroundStyle(Theme.chartTrend)
+                #endif
                 Text("Message").font(.subheadline.weight(.medium))
                     .foregroundStyle(Theme.textPrimary)
                 Spacer()

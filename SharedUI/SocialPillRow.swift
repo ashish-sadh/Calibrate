@@ -172,8 +172,25 @@ struct SocialPillRow: View {
                                         @ViewBuilder destination: () -> Destination) -> some View {
         NavigationLink(destination: destination()) {
             HStack(spacing: 6) {
+                #if os(Android)
+                // The leaderboard pill's `chart.bar.fill` is the app's
+                // highest-traffic warning triangle — Today, above the fold, on
+                // every launch (#1246, device-confirmed on build 103). Mapping
+                // it to `chart.bar.xaxis` would NOT fix it: that name only
+                // exists in skip-ui ≥1.59 and this build is pinned to 1.58
+                // (#1134), so it is unmapped too. Draw the bars, the same
+                // treatment behaviorInsightGlyph already gives this exact name
+                // (V6CoachingNudge). 11×11 is the .caption2 glyph box.
+                if icon == "chart.bar.fill" {
+                    BarChartShape().fill(tint).frame(width: 11, height: 11)
+                } else {
+                    Image(systemName: sym(icon))
+                        .font(.caption2).foregroundStyle(tint)
+                }
+                #else
                 Image(systemName: sym(icon))
                     .font(.caption2).foregroundStyle(tint)
+                #endif
                 VStack(alignment: .leading, spacing: 0) {
                     Text(title)
                         .font(.caption.weight(.semibold))

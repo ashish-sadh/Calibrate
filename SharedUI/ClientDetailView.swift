@@ -286,7 +286,14 @@ struct ClientDetailView: View {
     private var messageCard: some View {
         NavigationLink { ChatView(peer: client, relationship: "client") } label: {
             HStack(spacing: 10) {
+                #if os(Android)
+                // skip-ui maps no chat glyph and the paperplane stand-in read
+                // as SEND on this row (#1233) — drawn bubble instead
+                // (CameraGlyph.swift).
+                ChatBubbleShape().fill(Theme.chartTrend).frame(width: 18, height: 18)
+                #else
                 Image(systemName: sym("bubble.left.fill")).foregroundStyle(Theme.chartTrend)
+                #endif
                 Text("Message @\(client.username)").font(.subheadline.weight(.medium))
                     .foregroundStyle(Theme.textPrimary)
                 Spacer()

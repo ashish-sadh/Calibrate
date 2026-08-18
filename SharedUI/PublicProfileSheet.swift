@@ -165,8 +165,18 @@ struct PublicProfileSheet: View {
                 NavigationLink {
                     ChatView(peer: profile, relationship: (relationship ?? .friend).rawValue)
                 } label: {
+                    #if os(Android)
+                    // skip-ui maps no chat glyph and the paperplane stand-in
+                    // read as SEND on the Message button (#1233) — drawn
+                    // bubble instead (CameraGlyph.swift).
+                    Label { Text("Message") } icon: {
+                        ChatBubbleShape().fill(.white).frame(width: 15, height: 15)
+                    }
+                    .frame(maxWidth: .infinity)
+                    #else
                     Label("Message", systemImage: sym("bubble.left.fill"))
                         .frame(maxWidth: .infinity)
+                    #endif
                 }
                 .buttonStyle(.borderedProminent).tint(Theme.accent)
             }

@@ -318,10 +318,16 @@ struct SnapMealSheet: View {
     /// tertiary — the colour is what separates "this broke" from the neutral
     /// empty state above. Android keeps the extra Retake affordance because
     /// re-sending the same bytes is the likelier fix for a transport blip.
+    ///
+    /// The name is spelled LITERALLY (it used to reach the triangle by asking
+    /// for `exclamationmark.bubble` and leaning on a map line that no longer
+    /// exists), so the #1233 sweep — which moved every non-hazard exclamation
+    /// name onto the info circle — couldn't silently flip this screen. iOS
+    /// draws the OUTLINE triangle at `PhotoLogFlowView.swift:131`, not `.fill`.
     private func errorView(message: String) -> some View {
         VStack(spacing: 16) {
             Spacer()
-            Image(systemName: sym("exclamationmark.bubble"))
+            Image(systemName: sym("exclamationmark.triangle"))
                 .font(.largeTitle)
                 .foregroundStyle(Theme.surplus)
             Text(message)

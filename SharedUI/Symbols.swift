@@ -57,21 +57,33 @@ func sym(_ name: String) -> String {
     // model answering, not a failure (#1195). Reserve the triangle for the
     // states that really did go wrong.
     case "questionmark.circle", "questionmark.circle.fill": return "info.circle"
-    case "exclamationmark.circle.fill": return "exclamationmark.triangle.fill"
-    // Error states: Material has no speech-bubble variant, and the triangle IS
-    // the right meaning here (operator 2026-07-28: "closest icons are fine" —
-    // never let a name fall through to the triangle by ACCIDENT, but choosing
-    // it deliberately for an error is correct).
-    case "exclamationmark.bubble": return "exclamationmark.triangle"
-    // Scanning a page/label — Material's QrCodeScanner is genuinely the closest
-    // meaning here (unlike for "Snap", where a camera was the real object).
-    case "doc.viewfinder": return "camera.viewfinder"
+    // NOTICE states, not hazards. iOS draws these as a circle or a speech
+    // bubble and styles every caller as a note (textTertiary on
+    // DescribeMealSheet, fatYellow on ExerciseVoiceLogSheet) — it deliberately
+    // does NOT draw a triangle there, so the old triangle remap was both a
+    // different object AND a different severity (#1233, directive 0a).
+    // skip-ui maps no exclamation-circle in 1.58.0 or 1.59.1 (checked both), so
+    // Info is the closest same-meaning circle badge — the questionmark.circle
+    // precedent directly above.
+    //
+    // INVARIANT this table now holds: no sym() case may rewrite a non-triangle
+    // name into exclamationmark.triangle*. The triangle renders only where a
+    // call site literally asks for it, which guarantees iOS drew one too.
+    case "exclamationmark.circle", "exclamationmark.bubble": return "info.circle"
+    case "exclamationmark.circle.fill", "exclamationmark.bubble.fill": return "info.circle.fill"
+    // "doc.viewfinder", "camera" and "camera.fill" are deliberately UNMAPPED.
+    // They used to return "camera.viewfinder" under a comment claiming
+    // Material's QrCodeScanner was the closest meaning — but the pinned
+    // skip-ui 1.58 maps NO camera name at all (composeSymbolName has zero
+    // camera/QrCode entries), so those names fell straight through to the
+    // warning triangle anyway. A map entry that ships a triangle while its
+    // comment says "handled" is worse than no entry at all (#1233). Call sites
+    // draw CameraShape (CameraGlyph.swift) behind #if os(Android).
     case "plus.circle": return "plus.circle.fill"
     case "arrow.clockwise": return "arrow.clockwise.circle"
     // SkipUI's outline-star mapping is disabled upstream (skip-ui #148:
     // Material's "outlined" star isn't), so both fall back to the fill.
     case "star", "star.slash": return "star.fill"
-    case "camera.fill", "camera": return "camera.viewfinder"
     // Import (#1175): every call site is "bring a file INTO Drift". The old
     // list.bullet stand-in drew the SAME glyph as the Drift Packages chip
     // sitting next to it, so the two buttons read as duplicates. Material has
@@ -88,17 +100,26 @@ func sym(_ name: String) -> String {
     // render the drawn ForkKnifeShape (FoodGlyph.swift) instead — shared
     // views that need Image(systemName: "fork.knife") on Android must wait
     // on the symbolset investigation (Fuse builds drop xcassets symbolsets).
-    case "message.fill", "bubble.left.fill": return "paperplane.fill"
-    // quote.bubble shipped the ⚠️ triangle on the Friends header's "Add a
-    // tagline — what you're into" row (#1194 session). skip-ui maps no bubble
-    // or quote glyph at all. The trailing pencil already carries "edit" and
-    // the avatar carries "person", so both would read as duplicates; the
-    // smiling face is the closest mapped glyph for a personality blurb.
-    case "quote.bubble": return "face.smiling"
+    // The BUBBLE family — "message.fill", "bubble.left.fill",
+    // "bubble.left.and.bubble.right.fill", "quote.bubble" — is deliberately
+    // UNMAPPED. The first two used to return "paperplane.fill", which is SEND:
+    // the Friends-row chat affordance, PublicProfileSheet's "Message" button
+    // and ClientDetailView's "Message @user" row all read as "send" rather
+    // than "talk" (#1233/#1244). "quote.bubble" escaped a triangle into
+    // "face.smiling", which put a SMILEY on the tagline row (#1194) — a near
+    // miss, but still a different object. skip-ui maps no chat/forum/sms/quote
+    // glyph at all, so call sites draw ChatBubbleShape (CameraGlyph.swift)
+    // behind #if os(Android), and paperplane stays reserved for real sends.
     // skip-ui maps NO two-person glyph (person.2/group/people all absent) — only
     // single-person symbols. Fall to the closest mapped one so the Friends row
     // shows a person, never the warning triangle (operator directive 0a).
     case "person.2.fill", "person.2", "person.3.fill", "person.3": return "person.crop.circle.fill"
+    // skip-ui maps no person-add glyph (six person-family names, none badged).
+    // AddCircle carries the ADD half and every call site's label carries the
+    // other half — "Send friend request", "Find friends", "1 request"
+    // (#1233/#1244). Rejected: a bare "person", which on PublicProfileSheet
+    // would be the THIRD person glyph on one card.
+    case "person.badge.plus": return "plus.circle.fill"
     // doc.on.doc (copy/duplicate) is unmapped in skip-ui → shipped the ⚠️
     // triangle on Food's "Copy yesterday". Map to the mapped repeat glyph
     // (semantically "copy from a previous day"). Operator directive 0a.
@@ -125,7 +146,12 @@ func sym(_ name: String) -> String {
     // the old `star.fill` fallback put a solid favourite-star in front of the
     // AI command strip. The call site draws SparkleShape behind #if os(Android);
     // a new caller gets the warning triangle so the gap stays visible.
-    case "arrow.up.circle.fill": return "paperplane.fill"
+    // "arrow.up.circle.fill" is deliberately UNMAPPED. It used to return
+    // "paperplane.fill" — a paper plane keeps the MEANING (send) but is a
+    // different OBJECT than iOS's filled circled up-arrow, and it sat on the
+    // Coach send button, the showstopper surface (#1210). skip-ui maps no
+    // arrow-circle of any kind (checked composeSymbolName in 1.58.0). Call
+    // sites draw SendUpShape (SendGlyph.swift) behind #if os(Android).
     // "timer" has NO mapping: the calendar stand-in put a DATE glyph on the
     // "Track by Time" row of the exercise-options menu — the same failure as
     // sym("clock") (#1074), and doubly wrong there because the workout header

@@ -1,11 +1,14 @@
 import SwiftUI
 
 /// Camera glyph drawn as a `Path`: skip-ui's Material map has NO camera entry
-/// at all — the only near-name, `camera.viewfinder`, maps to
-/// `Icons.Outlined.QrCodeScanner`, so the dashboard's "Snap" chip rendered a
-/// QR-SCAN square (field report 2026-07-28). A QR scanner is a different
-/// object from a camera, which is exactly the directive-0a failure the
-/// dumbbell / flame / sparkle glyphs already exist to avoid.
+/// at all — `composeSymbolName` in the pinned 1.58.0 has zero camera/QrCode
+/// hits, including for the near-name `camera.viewfinder`. Symbols.swift used
+/// to route `camera`/`camera.fill`/`doc.viewfinder` there believing it drew
+/// `Icons.Outlined.QrCodeScanner` (as this comment itself claimed until
+/// #1233); it drew the WARNING TRIANGLE. Either way the answer is the same —
+/// a QR scanner and a hazard sign are both different objects from a camera,
+/// the directive-0a failure the dumbbell / flame / sparkle glyphs exist to
+/// avoid — so those map entries are gone and call sites draw this instead.
 ///
 /// Body is a rounded rectangle with the little top hump over the lens, matching
 /// how SF Symbols composes `camera`. Drawn as an OUTLINE (stroke) at the call
@@ -48,10 +51,14 @@ struct CameraShape: Shape {
 /// forum / sms entry, so `sym("bubble.left.fill")` fell back to
 /// `paperplane.fill` — the dashboard's "Describe" chip rendered a SEND ARROW
 /// (field report 2026-07-28), reading as "send a message" rather than
-/// "describe your meal".
+/// "describe your meal". #1233 removed that fallback outright and moved the
+/// whole bubble family here: the Friends-row chat affordance, "Message" on
+/// PublicProfileSheet, ClientDetailView's message row, CoachPageView's message
+/// row, and the "Add a tagline" row (which had escaped into a SMILEY).
 ///
 /// Rounded rectangle with a tail at the lower left, matching SF Symbols'
-/// `bubble.left`.
+/// `bubble.left`. Stroke it where iOS uses an outline name, fill it where iOS
+/// uses a `.fill` name.
 struct ChatBubbleShape: Shape {
     func path(in rect: CGRect) -> Path {
         let s = min(rect.width, rect.height) / 24.0

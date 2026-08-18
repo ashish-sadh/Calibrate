@@ -1240,8 +1240,15 @@ struct ActiveWorkoutView: View {
                     .accessibilityIdentifier("workout-command-input")
                 if !commandText.isEmpty {
                     Button { runCommand() } label: {
+                        #if os(Android)
+                        // sym("arrow.up.circle.fill") used to return the
+                        // paperplane — a different object from iOS's circled
+                        // up-arrow (#1210). 20pt matches .title3.
+                        SendUpShape().fill(Theme.ink).frame(width: 24, height: 24)
+                        #else
                         Image(systemName: sym("arrow.up.circle.fill"))
                             .font(.title3).foregroundStyle(Theme.ink)
+                        #endif
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("Run command")

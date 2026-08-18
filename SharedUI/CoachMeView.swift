@@ -199,8 +199,14 @@ struct CoachMeView: View {
                 draft = ""
                 Task { await send(text) }
             } label: {
+                #if os(Android)
+                // sym("arrow.up.circle.fill") used to return the paperplane —
+                // a different object from iOS's circled up-arrow (#1210).
+                SendUpShape().fill(Theme.accent).frame(width: 26, height: 26)
+                #else
                 Image(systemName: sym("arrow.up.circle.fill"))
                     .font(.title2).foregroundStyle(Theme.accent)
+                #endif
             }
             .buttonStyle(.plain)
             .disabled(draft.trimmingCharacters(in: .whitespaces).isEmpty || thinking)

@@ -367,10 +367,11 @@ struct ProgressPhotoViewerAndroid: View {
                 }
             } else {
                 VStack(spacing: 8) {
-                    // sym("camera") resolves to "camera.viewfinder", which the
-                    // pinned skip-ui does NOT map — it would render the warning
-                    // triangle. CameraShape is the drawn glyph the Snap chip
-                    // already uses for exactly this reason.
+                    // The pinned skip-ui maps NO camera name at all, and since
+                    // #1233 Symbols.swift no longer pretends otherwise: every
+                    // camera name now falls through to the warning triangle by
+                    // design, so a new caller's gap stays visible. CameraShape
+                    // is the drawn glyph the Snap chip already uses for this.
                     CameraShape()
                         .stroke(.white.opacity(0.4), lineWidth: 1.5)
                         .frame(width: 30, height: 30)

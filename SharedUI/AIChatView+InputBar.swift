@@ -146,9 +146,19 @@ extension AIChatView {
         Button {
             vm.speechService.gracefulStop()
         } label: {
+            #if os(Android)
+            // Same drawn send glyph as idleControls below (#1210). This branch
+            // is unreachable until the SpeechRecognizer seam lands (#1178) —
+            // gating it now keeps the two send buttons spelled identically so
+            // the seam doesn't ship a triangle the day it turns on. The stop
+            // control above is still a bare unmapped name; no drawn stop shape
+            // exists yet, and it goes live on the same day.
+            SendUpShape().fill(Theme.accent).frame(width: 26, height: 26)
+            #else
             Image(systemName: "arrow.up.circle.fill")
                 .font(.title2)
                 .foregroundStyle(Theme.accent)
+            #endif
         }
         .accessibilityLabel("Send message")
     }
@@ -221,8 +231,21 @@ extension AIChatView {
 
         let canSend = !vm.inputText.isEmpty || vm.pendingPhotoData != nil
         Button { vm.sendMessage() } label: {
+            #if os(Android)
+            // The Coach send button — the showstopper surface. skip-ui maps no
+            // arrow-circle, so sym() used to hand back `paperplane.fill` and
+            // this rendered a PAPER PLANE where the iPhone renders a filled
+            // circle with an up arrow: the meaning survived, the object didn't
+            // (#1210, directive 0a). Drawn glyph instead (SendGlyph.swift). The
+            // 26pt box is measured, not guessed: the disc is 10/12 of the box,
+            // so 26 lands the ~21.7dp disc the iOS .title2 symbol draws (the
+            // first pass at 22 rendered visibly smaller than the iPhone).
+            SendUpShape().fill(canSend ? Theme.ink : Color.secondary.opacity(0.5))
+                .frame(width: 26, height: 26)
+            #else
             Image(systemName: sym("arrow.up.circle.fill")).font(.title2)
                 .foregroundStyle(canSend ? Theme.ink : Color.secondary.opacity(0.5))
+            #endif
         }
         .accessibilityLabel("Send message")
         .accessibilityIdentifier("ai-chat-send")

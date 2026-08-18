@@ -465,7 +465,21 @@ struct LeaderboardsCard: View {
                             // A quiet marker for boards that are still just you,
                             // so the strip doesn't promise a competition.
                             if solo.contains(where: { $0.board.key == section.board.key }) {
+                                #if os(Android)
+                                // skip-ui maps no hourglass — sym("hourglass")
+                                // fell through to the WARNING TRIANGLE, which
+                                // is far too loud for "nobody's joined this
+                                // board yet" (#1233). The clock face carries
+                                // the same waiting/time meaning and is already
+                                // the app's stand-in for sym("clock"). Drawn at
+                                // 10, not iOS's 8pt type size: the dial is an
+                                // annulus, and below ~10 its rim thins to a
+                                // sub-pixel and anti-aliases away to nothing.
+                                ClockFaceShape().fill(Theme.textSecondary)
+                                    .frame(width: 10, height: 10)
+                                #else
                                 Image(systemName: sym("hourglass")).font(.system(size: 8))
+                                #endif
                             }
                         }
                         // See SocialPillRow: Material's touch-target floor makes

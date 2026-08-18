@@ -106,9 +106,22 @@ struct CoachSharingCard: View {
                     showingPreview.toggle()
                     if showingPreview { Task { await loadPreview() } }
                 } label: {
+                    #if os(Android)
+                    // skip-ui maps no eye/visibility glyph — sym("eye") fell
+                    // through to the WARNING TRIANGLE, which in front of "see
+                    // what your coach sees" reads as a privacy alarm (#1233).
+                    // Drawn eye instead (EyeGlyph.swift).
+                    Label {
+                        Text(showingPreview ? "Hide preview" : "See what @\(coach.username) sees")
+                    } icon: {
+                        EyeShape().fill(Theme.chartTrend).frame(width: 13, height: 13)
+                    }
+                    .font(.caption.weight(.semibold)).foregroundStyle(Theme.chartTrend)
+                    #else
                     Label(showingPreview ? "Hide preview" : "See what @\(coach.username) sees",
                           systemImage: sym("eye"))
                         .font(.caption.weight(.semibold)).foregroundStyle(Theme.chartTrend)
+                    #endif
                 }
                 .buttonStyle(.plain)
 
@@ -326,8 +339,14 @@ struct CoachSharingCard: View {
         } else {
             Button { editingGoal = true } label: {
                 HStack(spacing: 6) {
+                    #if os(Android)
+                    // "target" is deliberately unmapped (Symbols.swift) — draw
+                    // the rings, matching the Today tab icon (#1233).
+                    TargetShape().fill(Theme.accent).frame(width: 12, height: 12)
+                    #else
                     Image(systemName: sym("target"))
                         .font(.caption2).foregroundStyle(Theme.accent)
+                    #endif
                     VStack(alignment: .leading, spacing: 1) {
                         Text(Preferences.sharedGoalStatement == nil
                              ? "Set a goal to share" : "Revise your goal")
