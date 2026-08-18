@@ -4281,3 +4281,57 @@ enum TestError: Error { case msg(String); init(_ s: String) { self = .msg(s) } }
     let name = "NeverFavorited_\(Int.random(in: 10000...99999))"
     #expect(!FoodService.isFavorite(name: name), "Brand-new food should not be a favorite")
 }
+
+// MARK: - Day selection (#1254)
+//
+// The Android Food diary was pinned to today: tapping a past day wrote
+// `selectedDate` and re-queried the DB, but nothing repainted, so the pill,
+// macro card and diary all sat on today — and food logged next was silently
+// filed on the invisible day. `goToDate` is the single funnel every date
+// change routes through, so the repaint kick belongs there.
+
+/// Reference box — `DriftPlatform.uiRefreshKick` stores an escaping closure,
+/// so a plain captured local can't be counted from inside it.
+private final class KickCounter {
+    var count = 0
+}
+
+@MainActor @Test func goToDateLoadsThatDayAndKicksTheUI() async throws {
+    let db = try AppDatabase.empty()
+    let vm = FoodLogViewModel(database: db)
+    let cal = Calendar.current
+    let pastDay = cal.date(byAdding: .day, value: -5, to: Date())!
+
+    vm.goToDate(pastDay)
+    vm.quickAdd(name: "Past Poha", calories: 250, proteinG: 6, carbsG: 45, fatG: 5, fiberG: 3, mealType: .breakfast)
+
+    // Count kicks only across the assertions below. Restored in `defer` —
+    // the seam is process-global, and a leaked closure outlives this test.
+    let kicks = KickCounter()
+    DriftPlatform.uiRefreshKick = { kicks.count += 1 }
+    defer { DriftPlatform.uiRefreshKick = nil }
+
+    vm.goToDate(Date())
+    #expect(vm.todayEntries.isEmpty, "Today has nothing logged")
+
+    vm.goToDate(pastDay)
+    #expect(cal.isDate(vm.selectedDate, inSameDayAs: pastDay), "Selection must follow the requested day")
+    #expect(vm.todayEntries.count == 1, "The viewed day's rows must load, not today's")
+    #expect(vm.todayNutrition.calories == 250, "Macro card reads the viewed day")
+    #expect(kicks.count == 2, "Every date change schedules a repaint (#1254)")
+}
+
+@MainActor @Test func entryTimestampAnchorsToTheViewedDay() async throws {
+    let db = try AppDatabase.empty()
+    let vm = FoodLogViewModel(database: db)
+    let cal = Calendar.current
+    let pastDay = cal.date(byAdding: .day, value: -3, to: Date())!
+
+    vm.goToDate(pastDay)
+    let backfilled = vm.entryTimestamp(mealType: .lunch)
+    #expect(cal.isDate(backfilled, inSameDayAs: pastDay), "A back-filled log belongs on the viewed day")
+    #expect(cal.component(.hour, from: backfilled) == 13, "Lunch's canonical hour, not wall-clock now")
+
+    vm.goToDate(Date())
+    #expect(cal.isDateInToday(vm.entryTimestamp(mealType: .lunch)), "Today logs at the real time")
+}

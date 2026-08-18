@@ -10,6 +10,12 @@ import DriftCore
 /// dots stay correct when the user scrolls back through history.
 /// Single-source (SharedUI): pure SwiftUI + DriftCore, compiles for both apps.
 struct MealCalendarPicker: View {
+    /// Seed for the initially displayed month ONLY — never the selection.
+    /// Which cell is highlighted is read live off `viewModel.selectedDate`
+    /// (#1254): under Fuse the sheet's composition is retained across
+    /// presents, so a value param captured at construction froze the
+    /// highlight on whatever day was selected the first time the sheet
+    /// opened.
     let selectedDate: Date
     let viewModel: FoodLogViewModel
     let onSelect: (Date) -> Void
@@ -37,6 +43,14 @@ struct MealCalendarPicker: View {
         .padding(.horizontal, 16)
         .padding(.top, 8)
         .onAppear { reloadMonth() }
+        // A retained composition (Fuse) presents this again without re-running
+        // `init`, so the month + dots would still be seeded from the first
+        // present. On iOS the content rebuilds per present and this never
+        // fires. #1254.
+        .onChange(of: viewModel.selectedDate) { _, new in
+            displayedMonth = new
+            reloadMonth()
+        }
     }
 
     // MARK: - Header (month label + prev/next)
@@ -86,7 +100,10 @@ struct MealCalendarPicker: View {
 
     private func dayCell(_ day: Date) -> some View {
         let dayStart = cal.startOfDay(for: day)
-        let isSelected = cal.isDate(day, inSameDayAs: selectedDate)
+        // Live read + plain startOfDay equality, matching the day strip
+        // (FoodTabView) — Skip's Calendar.isDate(inSameDayAs:) misses on
+        // Android, which is what killed the selected pill there.
+        let isSelected = dayStart == cal.startOfDay(for: viewModel.selectedDate)
         let isToday = cal.isDateInToday(day)
         let hasFood = (loggedDays[dayStart] ?? 0) > 0
         let isFuture = dayStart > cal.startOfDay(for: Date())

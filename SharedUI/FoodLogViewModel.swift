@@ -9,6 +9,16 @@ import Observation
 @MainActor
 @Observable
 final class FoodLogViewModel {
+    /// One instance for the whole app on Android (`TodayStore.shared`
+    /// precedent). Compose tears the outgoing tab down and rebuilds the
+    /// incoming one on every tab change, so a per-view `@State` view model
+    /// hands the rebuilt Food tab a freshly-initialized one — the viewed day
+    /// snaps back to today and the diary repaints from empty. iOS keeps a
+    /// per-view instance: SwiftUI preserves `@State` across tab switches
+    /// anyway, and DriftTests construct food views against their own empty
+    /// databases, which a process-wide instance would leak across.
+    static let shared = FoodLogViewModel()
+
     private let database: AppDatabase
 
     var searchQuery: String = ""
@@ -524,10 +534,22 @@ final class FoodLogViewModel {
         }
     }
 
+    /// The single funnel every date change routes through — day strip, month
+    /// grid, both "Today" buttons, the past-day banner and the prev/next
+    /// helpers below.
+    ///
+    /// The kick is what makes a day change VISIBLE on Android (#1254). The
+    /// write itself always landed — a tap on a past day genuinely re-pointed
+    /// the view model, and food logged afterwards was filed on that day — but
+    /// bridged `@Observable` writes never schedule a Compose recomposition, so
+    /// nothing repainted: the pill, macro card and diary all sat on today
+    /// while new entries went somewhere the user could not see. Kick LAST, so
+    /// the recomposition it schedules composes against freshly loaded data.
     func goToDate(_ date: Date) {
         selectedDate = date
         loadTodayMeals()
         loadPlantPoints()
+        DriftPlatform.uiRefreshKick?()
     }
 
     func goToPreviousDay() { if let d = Calendar.current.date(byAdding: .day, value: -1, to: selectedDate) { goToDate(d) } }

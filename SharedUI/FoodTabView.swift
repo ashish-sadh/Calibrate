@@ -10,7 +10,14 @@ import DriftCore
 // Android — see MealGlyphs.swift.
 struct FoodTabView: View {
     @Binding var selectedTab: Int
+    // Android shares one view model process-wide so a tab switch doesn't hand
+    // this screen a fresh one (Compose rebuilds the tab on every switch —
+    // TodayStore.shared precedent); iOS keeps the per-view instance.
+    #if os(Android)
+    @State var viewModel = FoodLogViewModel.shared
+    #else
     @State var viewModel = FoodLogViewModel()
+    #endif
     @State var showingSearch = false
     @State var loggedDays: [Date: Double] = [:]
     @State var showingDatePicker = false
@@ -386,15 +393,22 @@ struct FoodTabView: View {
         #if os(Android)
         // ScrollViewReader.scrollTo never takes effect on Fuse (tried Date
         // ids, String ids, delayed re-anchor) — a 30-day-back strip opens at
-        // June with today off-screen. Window the strip so today sits in the
-        // initial viewport; deeper history is a tap away in the month sheet.
+        // June with today off-screen. Window the strip so the viewed day sits
+        // in the initial viewport; deeper history is a tap away in the month
+        // sheet. The window follows the SELECTION rather than today (#1254):
+        // anchored on today, a day picked in the month sheet fell outside the
+        // −3…+7 range and the strip came back with no pill at all — reading
+        // exactly like the pick hadn't taken. The banner below still says
+        // which day is being viewed and taps back to today.
         let scrollBackDays = 3
+        let anchor = selected
         #else
         let scrollBackDays = 30
+        let anchor = today
         #endif
         let scrollForwardDays = 7
         let days: [Date] = (-scrollBackDays...scrollForwardDays).compactMap {
-            cal.date(byAdding: .day, value: $0, to: today)
+            cal.date(byAdding: .day, value: $0, to: anchor)
         }
         return VStack(spacing: 8) {
             // Month label — tap to open calendar

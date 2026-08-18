@@ -5,7 +5,7 @@ AI-first local health tracker. AI chat is the primary interface — every data e
 
 ## Numbers
 - **Version:** 0.1.0, Build 382 (iOS) · 101 (Android Play internal)
-- **Tests:** 1,432 iOS DriftTests (1,234 swift-testing + 198 XCTest; UI/HealthKit/OCR-bound only — bulk of suite migrated down) + 2,772 DriftCoreTests in 150 suites (cross-platform pure-logic suite, 1 known issue); LLM eval ~160+ cases in DriftLLMEvalMacOS. (Both counts re-measured 2026-08-17.)
+- **Tests:** 1,434 iOS DriftTests (1,236 swift-testing + 198 XCTest; UI/HealthKit/OCR-bound only — bulk of suite migrated down) + 2,781 DriftCoreTests in 150 suites (cross-platform pure-logic suite, 1 known issue); LLM eval ~160+ cases in DriftLLMEvalMacOS. (Both counts re-measured 2026-08-18.)
 - **AI Eval:** 400+ scenarios in eval harness + LLM eval (~130-case gold set in IntentRoutingEval)
 - **Per-tool Reliability (Gemma 4, 50-query gold set):** log_food 10/10 (100%), edit_meal 9/10 (90%, tuned +10% from 80%), log_weight 10/10 (100%), mark_supplement 10/10 (100%), food_info 9/10 (90%) — overall 48/50 (96%)
 - **Foods:** 5,751 (curated down from 11,162 at build 237 — dropped verbose USDA SR Legacy bulk variants; hand-curated Indian-first + international cuisine retained. #1015/#1017 removed 36 duplicate rows, stripped 57 USDA distribution-program name suffixes, and de-title-cased 169 apostrophe names. Ceiling enforced at 6,000, cleanliness by FoodDBSizeTests. 2026-07-27: +12 field-miss additions, +315 INDB standard recipes — anuvaad.org.in Indian Nutrient Databank v2024.11, serving grams derived per-recipe, deduped on normalized keys + significant-token subsets against the whole catalog.)
