@@ -144,6 +144,15 @@ struct ProgressPhotoViewerAndroid: View {
             ZStack {
                 // Inner stack hugs the image, so the stat chips pin to the
                 // photo's bottom edge exactly as on iOS.
+                //
+                // fixedSize is what KEEPS it hugging. Without it the hug held for
+                // the first composition only: after any pose tap this stack
+                // expanded to the parent's height, and because its alignment is
+                // .bottom the photo went with it — the image dropped 108dp on the
+                // first tap and stayed there for every pose after (measured: top
+                // edge 431px → 729px, while iOS renders 455px for every pose).
+                // The chips moved too, which is why the bug reads as "the photo
+                // slid down" rather than "the chips came off the photo".
                 ZStack(alignment: .bottom) {
                     photo(for: current, pose: pose)
                         .gesture(DragGesture(minimumDistance: 40).onEnded { v in
@@ -152,6 +161,7 @@ struct ProgressPhotoViewerAndroid: View {
                         })
                     if let entry = current { statOverlay(for: entry) }
                 }
+                .fixedSize(horizontal: false, vertical: true)
                 // The tap zones live in the OUTER stack, which is already
                 // flexible. `Rectangle()` has no intrinsic size, so putting them
                 // in the inner stack stretched it and dropped the photo onto the
@@ -318,20 +328,27 @@ struct ProgressPhotoViewerAndroid: View {
 
     // MARK: - Pose switcher
 
+    /// `.pickerStyle(.segmented)` + `.tint(.white)` got the selected segment off
+    /// Material You's wallpaper-derived maroon, but left the three structural
+    /// tells that make the row read as Material rather than iOS: the leading ✓,
+    /// the inter-segment dividers, and an outlined track where iOS fills one.
+    /// IOSSegmentedPicker draws the measured iPhone control instead.
     var poseSwitcher: some View {
-        Picker("Pose", selection: $pose) {
-            ForEach(ProgressPose.allCases, id: \.self) { Text($0.shortName).tag($0) }
-        }
-        .pickerStyle(.segmented)
-        // skip-ui fills the selected segment with Material's secondaryContainer,
-        // which Material You derives from the wallpaper — it came out MAROON, a
-        // colour Drift doesn't use anywhere. `_tint` is the one lever skip-ui
-        // exposes for it (Controls/Picker.swift:171 — activeContainerColor =
-        // tint at 15% alpha); white at 15% on this dark track is iOS's grey
-        // selected pill. Android-only file, so iOS is untouched either way.
-        .tint(.white)
-        .padding(.horizontal, 16).padding(.bottom, 24).padding(.top, 8)
-        .colorScheme(.dark)
+        IOSSegmentedPicker(options: ProgressPose.allCases.map { $0.shortName },
+                           selection: poseNameBinding)
+            .padding(.horizontal, 16).padding(.bottom, 24).padding(.top, 8)
+    }
+
+    /// The picker speaks labels, not cases — a generic segmented control has no
+    /// precedent on Fuse anywhere in this tree, and an unproven generic View is
+    /// not worth spending on four fixed poses.
+    var poseNameBinding: Binding<String> {
+        Binding(get: { pose.shortName },
+                set: { name in
+                    if let match = ProgressPose.allCases.first(where: { $0.shortName == name }) {
+                        pose = match
+                    }
+                })
     }
 
     // MARK: - Photo
