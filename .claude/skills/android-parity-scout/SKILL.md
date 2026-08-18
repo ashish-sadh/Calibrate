@@ -24,7 +24,12 @@ First session: if the file is missing or stale, BUILD it by scanning the iOS
 source tree (every View file, every .sheet/.fullScreenCover/.contextMenu/
 .swipeActions/Button/NavigationLink) — this is the operator's "scan code to
 figure out ALL scenarios and UIs and sub-interactions". Commit matrix updates
-(explicit path, [no-qa] [no-test]).
+with a PATHSPEC commit — `git commit -m "docs(parity): … [no-qa] [no-test]"
+-- drift-android/PARITY-MATRIX.md` — never `git add` + bare `git commit`:
+lanes share one git index, so a bare commit sweeps a sibling's staged WIP
+onto main under your docs message (fired twice: scout #23 2026-08-17, scout
+#33 2026-08-18 `a0922c0b`). Before pushing, `git show HEAD --stat` must list
+ONLY the matrix.
 
 ## Session algorithm
 1. Read `~/drift-android-parity-directives.txt` (operator overrides) and the
