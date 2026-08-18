@@ -39,6 +39,14 @@ struct SharingView: View {
     /// is a legitimate state for a new account — telling someone with friends
     /// that they have none is the worse error by far.
     @State var connectionsFailed = false
+    /// A hub load has finished at least once. Until it has, `conns` is still
+    /// its initial `[]` and `requestSenders` its initial `[:]` — values that
+    /// LOOK like answers ("No friends yet", "@someone") but are just the state
+    /// we started with. On Android the hub load is several bridged round-trips
+    /// and that window is seconds wide, so the screen spent it confidently
+    /// telling people their friends were gone (#1251). Nothing may render an
+    /// emptiness claim until this is true.
+    @State var hubLoaded = false
     @State var incomingTemplates: [SharedTemplateDTO] = []
     @State var clientSessions: [LiveWorkoutDTO] = []
     // Per-row connection management (operator 2026-07-29: no way to unfriend,
@@ -176,7 +184,9 @@ struct SharingView: View {
                     LeaderboardsCard(connections: conns)
                 }
                 connectionSection("FRIENDS", friendConns, subtitle: nil,
-                                  emptyText: "No friends yet. Search a @username above to add a friend or a coach.")
+                                  emptyText: hubLoaded
+                                      ? "No friends yet. Search a @username above to add a friend or a coach."
+                                      : "Loading\u{2026}")
             }
         }
     }
@@ -686,15 +696,27 @@ struct SharingView: View {
         .card()
     }
 
+    /// Only requests whose sender we can actually name. Answering one decides
+    /// who gets your weight, workouts and streaks; "@someone" with a "?" avatar
+    /// is not enough to decide on, and the sender fetch coming back empty on a
+    /// healthy account is exactly what #1251 photographed. An unnamed request
+    /// is reported as unloaded, never rendered as an accept/decline row.
+    var identifiedRequests: [IdentifiedRequest] {
+        requests.compactMap { req in
+            requestSenders[req.requesterId].map { IdentifiedRequest(request: req, sender: $0) }
+        }
+    }
+    var unnamedRequestCount: Int { requests.count - identifiedRequests.count }
+
     private var requestsCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("FRIEND REQUESTS").sectionHeading()
-            ForEach(requests) { req in
-                let sender = requestSenders[req.requesterId]
+            ForEach(identifiedRequests) { pair in
+                let req = pair.request
                 HStack(spacing: 10) {
-                    avatar(sender?.username ?? "?")
+                    avatar(pair.sender.username)
                     VStack(alignment: .leading, spacing: 1) {
-                        Text("@\(sender?.username ?? "someone")")
+                        Text("@\(pair.sender.username)")
                             .font(.subheadline.weight(.medium))
                         Text(req.role == .trainer ? "wants you as their coach" : "sent a friend request")
                             .font(.caption2).foregroundStyle(Theme.textSecondary)
@@ -707,6 +729,25 @@ struct SharingView: View {
                     Button { Task { await respond(req, accept: false) } } label: {
                         Image(systemName: sym("xmark")).foregroundStyle(Theme.textSecondary)
                             .padding(8).background(Theme.pillBackground, in: Circle())
+                    }.buttonStyle(.plain)
+                }
+                .padding(.vertical, 2)
+            }
+            if unnamedRequestCount > 0 {
+                HStack(spacing: 10) {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(unnamedRequestCount == 1
+                             ? "A request couldn't load"
+                             : "\(unnamedRequestCount) requests couldn't load")
+                            .font(.subheadline.weight(.medium))
+                        Text("We couldn't reach the server to see who's asking.")
+                            .font(.caption2).foregroundStyle(Theme.textSecondary)
+                    }
+                    Spacer()
+                    Button { Task { await refreshHub() } } label: {
+                        Text("Try again").font(.caption.weight(.semibold))
+                            .padding(.horizontal, 12).padding(.vertical, 6)
+                            .background(Theme.accent, in: Capsule()).foregroundStyle(.white)
                     }.buttonStyle(.plain)
                 }
                 .padding(.vertical, 2)
@@ -805,6 +846,11 @@ struct SharingView: View {
     }
 
     private func refreshHub() async {
+        let me = svc.currentSession?.userID
+        // EVERY fetch starts here, concurrently. My own profile and the inbox
+        // used to run sequentially after the fan-out was already consumed, so
+        // the hub's critical path carried two extra bridged round-trips — and
+        // `conns` was assigned dead last, behind both of them (#1251).
         async let reqs = try? await svc.incomingRequests()
         async let tmpls = try? await svc.incomingSharedTemplates()
         // Connections are NOT `try?`. Every other call here degrades gracefully
@@ -816,23 +862,12 @@ struct SharingView: View {
         async let sessions = try? await svc.clientSessions()
         async let pending = try? await svc.pendingEdges()
         async let listed = try? await svc.isDiscoverable()
-        requests = await reqs ?? []
-        incomingTemplates = await tmpls ?? []
-        clientSessions = await sessions ?? []
-        let me = svc.currentSession?.userID
-        pendingIDs = Set((await pending ?? []).map {
-            $0.requesterId == me ? $0.addresseeId : $0.requesterId
-        })
-        // Absent reads as listed, matching the column default.
-        discoverable = (await listed) ?? true
-        if let me { myProfile = (try? await svc.profiles(ids: [me]))?.first }
-        // Who is waiting on a reply, keyed by person.
-        let inbox = (try? await svc.recentInbox()) ?? []
-        let rollup = Inbox.rollup(from: inbox, me: me ?? "",
-                                 windowLimit: SharingService.inboxWindow)
-        unreadByPeer = Dictionary(rollup.entries.map { ($0.peerID, $0.unread) },
-                                  uniquingKeysWith: { a, _ in a })
+        async let mine = try? await svc.profiles(ids: me.map { [$0] } ?? [])
+        async let inboxRows = try? await svc.recentInbox()
 
+        // Connections FIRST, because every `await` ahead of it is a frame the
+        // FRIENDS section spends insisting it is empty. Awaiting it first costs
+        // the other calls nothing — `async let` already put them all in flight.
         do {
             conns = try await connections
             connectionsFailed = false
@@ -840,6 +875,21 @@ struct SharingView: View {
             // Keep whatever we already had on screen rather than blanking it.
             connectionsFailed = true
         }
+        requests = await reqs ?? []
+        incomingTemplates = await tmpls ?? []
+        clientSessions = await sessions ?? []
+        pendingIDs = Set((await pending ?? []).map {
+            $0.requesterId == me ? $0.addresseeId : $0.requesterId
+        })
+        // Absent reads as listed, matching the column default.
+        discoverable = (await listed) ?? true
+        myProfile = (await mine)?.first
+        // Who is waiting on a reply, keyed by person.
+        let inbox = (await inboxRows) ?? []
+        let rollup = Inbox.rollup(from: inbox, me: me ?? "",
+                                 windowLimit: SharingService.inboxWindow)
+        unreadByPeer = Dictionary(rollup.entries.map { ($0.peerID, $0.unread) },
+                                  uniquingKeysWith: { a, _ in a })
 
         // Opening your own Friends hub refreshes what your coaches see. The
         // briefing is a local-first snapshot, so without this it only moved
@@ -858,6 +908,7 @@ struct SharingView: View {
             let profs = (try? await svc.profiles(ids: requests.map(\.requesterId))) ?? []
             requestSenders = Dictionary(profs.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
         }
+        hubLoaded = true
     }
 
     /// How many rows a section shows before collapsing. Six fills roughly one
@@ -961,6 +1012,7 @@ struct SharingView: View {
     private func reset() {
         username = ""; searchText = ""
         searchResults = []; requests = []; requestSenders = [:]; conns = []
+        hubLoaded = false
         incomingTemplates = []
         clientSessions = []; requestedIDs = []; searchedOnce = false
     }
@@ -1067,6 +1119,15 @@ struct SharingView: View {
         return mine
     }
 
+}
+
+/// A pending request paired with the profile of whoever sent it. Pairing them
+/// up front is what makes "we don't know who this is" unrepresentable in the
+/// row: there is no optional to fall back to a placeholder handle (#1251).
+struct IdentifiedRequest: Identifiable {
+    let request: FriendshipDTO
+    let sender: SharedProfile
+    var id: String { request.id }
 }
 
 /// A friend's workout as it appears in your app — live (refreshes) or completed.

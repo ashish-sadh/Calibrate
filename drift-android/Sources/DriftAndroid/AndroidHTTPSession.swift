@@ -59,13 +59,15 @@ public final class AndroidHTTPSession: HTTPDataSession, @unchecked Sendable {
             try Self.facadeRequest(encoded.url, encoded.method, encoded.headersJson, encoded.bodyBase64, encoded.timeoutMillis)
         }
         let decoded = try HTTPFacadeCodec.decodeResponse(raw, url: request.url ?? URL(string: "https://invalid")!)
-        // Every cloud bug this seam has produced (#1133, #1136, #1177) was
-        // invisible from Swift: the reply arrives as a plain 200 and the damage
-        // only surfaces as an empty parse three layers up. A reply that is
-        // implausibly small for its status is the tell. Method, sizes and
-        // status ONLY — request bodies carry the API key and response bodies
-        // carry the user's meal, and neither belongs in logcat.
-        logger.info("AndroidHTTPSession: \(encoded.method) \(encoded.bodyBase64.count)B(b64) → HTTP \((decoded.1 as? HTTPURLResponse)?.statusCode ?? -1), \(decoded.0.count)B")
+        // Every cloud bug this seam has produced (#1133, #1136, #1177, #1251)
+        // was invisible from Swift: the reply arrives as a plain 200 and the
+        // damage only surfaces as an empty parse three layers up. A reply that
+        // is implausibly small for its status is the tell — and knowing WHICH
+        // endpoint it belongs to is what makes nine identical-looking reads in
+        // one screen load tellable apart (#1251). Method, endpoint signature,
+        // sizes and status ONLY: request bodies carry the API key, response
+        // bodies carry the user's meal, and neither belongs in logcat.
+        logger.info("AndroidHTTPSession: \(encoded.method) \(HTTPFacadeCodec.endpointSignature(encoded.url)) \(encoded.bodyBase64.count)B(b64) → HTTP \((decoded.1 as? HTTPURLResponse)?.statusCode ?? -1), \(decoded.0.count)B")
         return decoded
     }
 }

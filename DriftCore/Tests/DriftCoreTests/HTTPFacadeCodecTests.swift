@@ -125,4 +125,38 @@ struct HTTPFacadeCodecTests {
         #expect(data == payload)
         #expect((response as? HTTPURLResponse)?.statusCode == 200)
     }
+
+    // MARK: Endpoint signature (#1251)
+
+    /// The whole point is that a log line says WHICH table without saying WHO.
+    @Test func endpointSignatureNamesTheTableAndFirstKeyOnly() {
+        #expect(HTTPFacadeCodec.endpointSignature(
+            "https://x.supabase.co/rest/v1/profiles?id=in.(abc-123,def-456)&select=id,username")
+            == "profiles?id")
+        #expect(HTTPFacadeCodec.endpointSignature(
+            "https://x.supabase.co/rest/v1/friendships?status=eq.accepted&or=(requester_id.eq.abc)")
+            == "friendships?status")
+        #expect(HTTPFacadeCodec.endpointSignature(
+            "https://x.supabase.co/auth/v1/token?grant_type=refresh_token")
+            == "token?grant_type")
+        #expect(HTTPFacadeCodec.endpointSignature("https://x.supabase.co/rest/v1/messages")
+            == "messages")
+    }
+
+    /// No UUID, handle, token or column VALUE may survive into the signature —
+    /// this is a logcat line on a user's phone.
+    @Test func endpointSignatureLeaksNoValues() {
+        let uid = "cf600644-ceb9-4185-8308-f9d03689f159"
+        let sig = HTTPFacadeCodec.endpointSignature(
+            "https://x.supabase.co/rest/v1/profiles?id=eq.\(uid)&select=discoverable&limit=1")
+        #expect(sig == "profiles?id")
+        #expect(!sig.contains(uid))
+        #expect(!sig.contains("discoverable"))
+    }
+
+    /// A URL the codec can't parse degrades to the raw string rather than
+    /// crashing or logging nothing at all.
+    @Test func endpointSignatureFallsBackToTheWholeString() {
+        #expect(HTTPFacadeCodec.endpointSignature("not-a-url") == "not-a-url")
+    }
 }

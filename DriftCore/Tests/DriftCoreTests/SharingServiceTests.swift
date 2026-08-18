@@ -428,6 +428,94 @@ struct SharingServiceTests {
         #expect(conns.first?.profile.username == "hudson")
     }
 
+    // MARK: A short read must never look like an empty one (#1251)
+
+    /// A profile row that was asked for and didn't come back gets asked for
+    /// again — and the retry asks ONLY for what was missing.
+    @Test func profilesRetriesTheRowsThatDidNotComeBack() async throws {
+        let mock = MockHTTP()
+        let (svc, db) = try makeService(mock)
+        signIn(svc, db: db)
+        mock.queue = [(200, [["id": "a", "username": "ay"]]),
+                      (200, [["id": "b", "username": "bee"]])]
+
+        let profs = try await svc.profiles(ids: ["a", "b"])
+        #expect(Set(profs.map(\.id)) == ["a", "b"])
+        #expect(mock.requests.count == 2)
+        #expect(mock.requests[1].url?.absoluteString.contains("id=in.(b)") == true)
+    }
+
+    /// THE #1251 REGRESSION. Edges came back, profiles didn't, and the person
+    /// was silently compact-mapped out — so a coached account rendered "No
+    /// friends yet". A read that couldn't resolve everyone must FAIL, because
+    /// the hub draws a very different (and honest) screen for a failure.
+    @Test func connectionsFailsRatherThanQuietlyDroppingAPerson() async throws {
+        let mock = MockHTTP()
+        let (svc, db) = try makeService(mock)
+        signIn(svc, db: db)
+        mock.queue = [(200, [edge("e1", "hud", "me")]),
+                      (200, [[String: Any]]()),      // profiles: nothing
+                      (200, [[String: Any]]())]      // retry: still nothing
+
+        await #expect(throws: SharingError.self) { _ = try await svc.connections() }
+    }
+
+    /// Same rule when only SOME of them resolve — a half-listed roster is the
+    /// more dangerous version, because it looks plausible.
+    @Test func connectionsFailsWhenOnlySomeProfilesResolve() async throws {
+        let mock = MockHTTP()
+        let (svc, db) = try makeService(mock)
+        signIn(svc, db: db)
+        mock.queue = [(200, [edge("e1", "hud", "me"), edge("e2", "kim", "me")]),
+                      (200, [["id": "hud", "username": "hudson"]]),
+                      (200, [["id": "hud", "username": "hudson"]])]
+
+        await #expect(throws: SharingError.self) { _ = try await svc.connections() }
+    }
+
+    /// Everyone resolved — the ordinary path still returns connections.
+    @Test func connectionsSucceedWhenEveryProfileResolves() async throws {
+        let mock = MockHTTP()
+        let (svc, db) = try makeService(mock)
+        signIn(svc, db: db)
+        mock.queue = [(200, [edge("e1", "hud", "me")]),
+                      (200, [["id": "hud", "username": "hudson"]])]
+
+        let conns = try await svc.connections()
+        #expect(conns.map(\.profile.username) == ["hudson"])
+        #expect(mock.requests.count == 2)   // no retry when nothing is missing
+    }
+
+    /// Clearing the session strands an anonymous account forever — re-claiming
+    /// mints a NEW uid and the old graph is unreachable. One empty read is not
+    /// enough evidence for that.
+    @Test func validateSessionKeepsTheSessionWhenTheRetryFindsTheRow() async throws {
+        let mock = MockHTTP()
+        mock.queue = [(200, [[String: Any]]()),
+                      (200, [["id": "me", "username": "ashish"]] as [[String: Any]])]
+        let (svc, db) = try makeService(mock)
+        signIn(svc, db: db, username: "ashish")
+
+        let ok = await svc.validateSession()
+        #expect(ok)
+        #expect(SharingSessionStore.isSignedIn(db: db))
+        #expect(mock.requests.count == 2)
+    }
+
+    /// A genuinely deleted account still reaches the picker — it just costs one
+    /// extra GET to be sure.
+    @Test func validateSessionClearsOnlyAfterTwoEmptyReads() async throws {
+        let mock = MockHTTP()
+        mock.queue = [(200, [[String: Any]]()), (200, [[String: Any]]())]
+        let (svc, db) = try makeService(mock)
+        signIn(svc, db: db, username: "ashish")
+
+        let ok = await svc.validateSession()
+        #expect(!ok)
+        #expect(!SharingSessionStore.isSignedIn(db: db))
+        #expect(mock.requests.count == 2)
+    }
+
     // MARK: Global boards (#1170)
 
     /// THE REGRESSION. The worldwide queries must ask for BOTH period keys.

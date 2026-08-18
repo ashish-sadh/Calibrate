@@ -17,12 +17,20 @@ struct ClientsView: View {
     @State var clients: [Connection] = []
     @State var sessions: [LiveWorkoutDTO] = []
     @State var loading = true
+    /// The roster fetch failed. Distinct from "no clients" — telling a coach
+    /// nobody has hired them because one read failed is the same lie the hub
+    /// used to tell about friends (#1251).
+    @State var failed = false
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 10) {
                 if loading {
                     ProgressView().frame(maxWidth: .infinity).padding(.vertical, 24)
+                } else if failed {
+                    CouldNotLoadCard(
+                        message: "Couldn't load your clients just now — they're safe, this device just couldn't reach the server.",
+                        retry: { await load() })
                 } else if clients.isEmpty {
                     Text("Nobody has made you their coach yet. When someone does, they'll appear here with what they've been training.")
                         .font(.caption).foregroundStyle(Theme.textSecondary)
@@ -83,9 +91,10 @@ struct ClientsView: View {
 
     func load() async {
         let svc = SharingService.shared
-        async let conns = try? svc.connections()
+        async let conns = svc.connections()
         async let live = try? svc.clientSessions()
-        let all = (await conns) ?? []
+        let all: [Connection]
+        do { all = try await conns; failed = false } catch { all = []; failed = true }
         sessions = (await live) ?? []
         // Whoever needs you first.
         clients = all.filter { $0.kind == .client }.sorted {
@@ -103,12 +112,19 @@ struct ClientsView: View {
 struct LeaderboardView: View {
     @State var connections: [Connection] = []
     @State var loading = true
+    /// See `ClientsView.failed` — an unreachable server must not read as
+    /// "you have no friends to compare with" (#1251).
+    @State var failed = false
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 if loading {
                     ProgressView().frame(maxWidth: .infinity).padding(.vertical, 24)
+                } else if failed {
+                    CouldNotLoadCard(
+                        message: "Couldn't load your boards just now — this device couldn't reach the server.",
+                        retry: { await loadBoards() })
                 } else if connections.filter({ $0.kind == .friend }).isEmpty {
                     Text("Leaderboards compare you with friends. Add one and your boards fill in — steps, calories, workouts and your food-logging streak are ready to go.")
                         .font(.caption).foregroundStyle(Theme.textSecondary)
@@ -128,9 +144,41 @@ struct LeaderboardView: View {
         }
         .background(Theme.background.ignoresSafeArea())
         .navigationTitle("Leaderboards")
-        .task {
-            connections = (try? await SharingService.shared.connections()) ?? []
-            loading = false
+        .task { await loadBoards() }
+    }
+
+    func loadBoards() async {
+        do {
+            connections = try await SharingService.shared.connections()
+            failed = false
+        } catch {
+            failed = true
         }
+        loading = false
+    }
+}
+
+/// The one "we couldn't reach the server" card these focused screens share.
+/// Deliberately not the empty state: an empty roster and an unreachable server
+/// are different facts and must never render as the same sentence (#1251).
+struct CouldNotLoadCard: View {
+    let message: String
+    let retry: () async -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(message)
+                .font(.caption).foregroundStyle(Theme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Button { Task { await retry() } } label: {
+                Text("Try again")
+                    .font(.subheadline.weight(.semibold)).foregroundStyle(.white)
+                    .padding(.horizontal, 20).padding(.vertical, 8)
+                    .background(Theme.accent, in: Capsule())
+            }
+            .buttonStyle(.plain)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .card()
     }
 }

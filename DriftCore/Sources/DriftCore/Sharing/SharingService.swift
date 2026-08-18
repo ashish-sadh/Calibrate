@@ -138,13 +138,31 @@ public final class SharingService {
     /// Chunked and de-duplicated. Chunks run sequentially rather than
     /// concurrently: this is a background enrichment call, and someone with 300
     /// connections should not open six parallel sockets on every dashboard load.
+    ///
+    /// A row that was asked for and didn't come back is retried once. Profiles
+    /// are readable by every authenticated caller (RLS `true`) and deleting one
+    /// cascades its edges away, so "the ID exists but its row is missing" is not
+    /// a steady state — it means THIS read dropped it. Still returns whatever
+    /// resolved rather than throwing: a genuinely deleted account must not brick
+    /// every caller, so the ones that cannot tolerate a hole say so themselves
+    /// (see `connections()`).
     public func profiles(ids: [String]) async throws -> [SharedProfile] {
         guard !ids.isEmpty else { return [] }
         let unique = Array(Set(ids))
         let token = try await validToken()
+        var out = try await profileRows(unique, token: token)
+        let missing = Array(Set(unique).subtracting(out.map(\.id)))
+        guard !missing.isEmpty else { return out }
+        Log.app.error("profiles(ids:): \(missing.count) of \(unique.count) row(s) missing — retrying once")
+        out += try await profileRows(missing, token: token)
+        return out
+    }
+
+    /// One chunked pass over `ids`.
+    private func profileRows(_ ids: [String], token: String) async throws -> [SharedProfile] {
         var out: [SharedProfile] = []
-        for start in stride(from: 0, to: unique.count, by: Self.profileBatchSize) {
-            let chunk = unique[start..<min(start + Self.profileBatchSize, unique.count)]
+        for start in stride(from: 0, to: ids.count, by: Self.profileBatchSize) {
+            let chunk = ids[start..<min(start + Self.profileBatchSize, ids.count)]
             let path = "profiles?id=in.(\(chunk.joined(separator: ",")))"
                 + "&select=id,username,display_name,avatar_url,tagline"
             out += try await client.restGet(path, token: token) as [SharedProfile]
@@ -327,6 +345,22 @@ public final class SharingService {
         let otherIDs = edges.map { $0.requesterId == uid ? $0.addresseeId : $0.requesterId }
         let profs = try await profiles(ids: otherIDs)
         let byID = Dictionary(profs.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+        // An edge whose profile is STILL missing after `profiles(ids:)` retried
+        // means the read failed, not that the person left: profiles are readable
+        // by any authenticated caller and deleting one takes its edges with it.
+        // Compact-mapping such a person away silently downgrades a failed read
+        // into a shorter roster — and at zero resolved it produces exactly the
+        // "No friends yet" lie that `SharingView.refreshHub`'s deliberate lack
+        // of `try?` exists to catch, routing around the guard instead of
+        // tripping it. (Not the mechanism behind #1251, which turned out to be
+        // render ordering — but the same hole, one layer down, and the #1251
+        // probe is the only reason anyone looked.) Fail so the caller can say
+        // "couldn't load" instead of "you have none".
+        let unresolved = Set(otherIDs).subtracting(byID.keys)
+        if !unresolved.isEmpty {
+            throw SharingError.network(
+                "profile enrichment incomplete (\(byID.count)/\(Set(otherIDs).count))")
+        }
         let resolved = edges.compactMap { e -> Connection? in
             let otherID = e.requesterId == uid ? e.addresseeId : e.requesterId
             guard let p = byID[otherID] else { return nil }
@@ -1110,9 +1144,22 @@ public final class SharingService {
             if session.username != nil {
                 // Select id,username so the row decodes as SharedProfile
                 // (username is required) — selecting only id fails to decode.
-                let mine: [SharedProfile] = try await client.restGet(
-                    "profiles?id=eq.\(session.userID)&select=id,username", token: token)
-                if mine.isEmpty { SharingSessionStore.clear(db: db); return false }
+                let path = "profiles?id=eq.\(session.userID)&select=id,username"
+                var mine: [SharedProfile] = try await client.restGet(path, token: token)
+                if mine.isEmpty {
+                    // Clearing here destroys the ONLY copy of this device's
+                    // identity. The account is anonymous and cannot be signed
+                    // back into, so a wrong clear drops the user at the username
+                    // picker and re-claiming mints a NEW uid — their friends,
+                    // coaches and chat history are still on the server and they
+                    // can never reach them again. One read is not enough
+                    // evidence for something irreversible — a transient empty
+                    // 200 costs the user their whole graph, while a second GET
+                    // costs a deleted account one extra request. Ask twice.
+                    mine = try await client.restGet(path, token: token)
+                    if mine.isEmpty { SharingSessionStore.clear(db: db); return false }
+                    Log.app.error("validateSession: profile read came back empty, retry found the row — session kept")
+                }
             }
             return true
         } catch let e as SharingError {

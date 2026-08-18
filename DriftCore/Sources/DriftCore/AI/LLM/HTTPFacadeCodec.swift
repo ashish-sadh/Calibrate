@@ -31,6 +31,22 @@ public enum HTTPFacadeCodec {
         return (url, method, headersJson, bodyBase64, timeoutMillis)
     }
 
+    /// Which endpoint a log line is about, with nothing identifying in it.
+    /// Sizes-only logging is what made #1251 cost a JWT replay to diagnose —
+    /// nine reads in one Friends-hub load all logged as `GET → 200, 2B`, and
+    /// which TABLE each one hit was the whole question. Endpoint plus the first
+    /// query KEY (`profiles?id`, `friendships?status`) answers it and still
+    /// carries no user IDs, no handles and no tokens.
+    public static func endpointSignature(_ url: String) -> String {
+        let tail = url.components(separatedBy: "/v1/").last ?? url
+        guard let q = tail.firstIndex(of: "?") else { return tail }
+        let table = String(tail[..<q])
+        let firstKey = tail[tail.index(after: q)...]
+            .components(separatedBy: "&").first?
+            .components(separatedBy: "=").first ?? ""
+        return firstKey.isEmpty ? table : "\(table)?\(firstKey)"
+    }
+
     /// Decodes `HttpFacade.kt#request`'s
     /// `{"status":Int,"bodyBase64":String,"headersJson":String}` reply.
     /// `status < 0` means the Kotlin side caught an exception (timeout,
