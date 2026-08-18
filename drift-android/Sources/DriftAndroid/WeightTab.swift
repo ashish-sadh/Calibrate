@@ -5,15 +5,9 @@ import DriftCore
 
 // MARK: - Rows
 
-struct WeightStats: Sendable {
-    var current: String = "—"
-    var trend: String = ""
-    var change7d: String?
-    var change30d: String?
-}
-
-/// Mirrors `WeightViewModel.TimeRange` (iOS) — the Android chart re-windows
-/// in-memory over this instead of iOS's chartScrollableAxes pan (#1092 plan).
+/// Mirrors `WeightViewModel.TimeRange` (iOS) — the chip sets the chart's
+/// visible window (`WeightChartWindow`) instead of iOS's chartScrollableAxes
+/// pan (#1092 plan); it never filters the plotted series (#1220).
 enum WeightChartRange: String, CaseIterable {
     case oneWeek = "1W", oneMonth = "1M", threeMonths = "3M", sixMonths = "6M", oneYear = "1Y", all = "All"
 
@@ -42,10 +36,14 @@ enum WeightGranularity: String, CaseIterable {
     /// Shared for the same reason as `TodayStore.shared` — see that comment.
     static let shared = WeightStore()
 
-    var stats = WeightStats()
     /// Raw history, newest first — rendered by the single-sourced
     /// `WeightLogListView` (month groups, medians, change arrows).
     var history: [WeightEntry] = []
+    /// The calculator's full output, fed to the shared `WeightInsightsView`.
+    /// Every current/rate/change number on this screen comes from here, so the
+    /// screen cannot contradict itself the way the old three-source stats
+    /// header did (#1205).
+    var fullTrend: WeightTrendCalculator.WeightTrend?
     /// Full-history series for `WeightChartAndroid` at the current granularity;
     /// the range chips filter this in-memory rather than refetching (#1092).
     var allDailyPoints: [WeightChartSeries.Point] = []
@@ -80,25 +78,20 @@ enum WeightGranularity: String, CaseIterable {
             // trajectory even when the stats header/log list only show recent.
             let history = WeightServiceAPI.getHistory(days: 365).sorted { $0.date > $1.date }
             self.history = history
-            var s = WeightStats()
-            if let latest = history.first {
-                s.current = Self.format(kg: latest.weightKg, unit: unit)
-                s.change7d = Self.change(history: history, days: 7, unit: unit)
-                s.change30d = Self.change(history: history, days: 30, unit: unit)
-            }
-            // The trend line needs a few days of data — next to a real current
-            // value, "No weight data yet." reads as a bug, so suppress it.
-            // describeTrend() ALSO returns that copy itself when the entries
-            // span too few days, so filter the sentinel, not just the count.
-            let trend = history.count >= 2 ? WeightServiceAPI.describeTrend() : ""
-            s.trend = trend.hasPrefix("No weight data") ? "" : trend
-            stats = s
+            // The shared insights view reads `WeightTrendService.shared` for the
+            // CURRENT cell (the latest SCALE reading, as against the EMA below
+            // it). Nobody refreshes that singleton on Android, so without this
+            // the cell would silently fall back to the EMA — re-creating the
+            // scale-vs-trend confusion #1205 exists to kill.
+            WeightTrendService.shared.refresh()
 
-            // Chart series — calculateTrend sorts its input itself, so
-            // history's (descending) order here doesn't matter.
-            let fullTrend = WeightTrendCalculator.calculateTrend(
+            // ONE calculator call feeds both the insights cards and the chart
+            // series — calculateTrend sorts its input itself, so history's
+            // (descending) order here doesn't matter.
+            let trend = WeightTrendCalculator.calculateTrend(
                 entries: history.map { (date: $0.date, weightKg: $0.weightKg) })
-            trendPoints = fullTrend?.dataPoints ?? []
+            fullTrend = trend
+            trendPoints = trend?.dataPoints ?? []
             rebuildSeries()
             if let goal = WeightGoal.load() {
                 goalChangeKg = goal.totalChangeKg
@@ -116,20 +109,6 @@ enum WeightGranularity: String, CaseIterable {
         allDailyPoints = granularity == .weekly
             ? WeightChartSeries.weekly(trendPoints, unit: unit)
             : WeightChartSeries.daily(trendPoints, unit: unit)
-    }
-
-    private static func format(kg: Double, unit: WeightUnit) -> String {
-        String(format: "%.1f %@", unit.convert(fromKg: kg), unit.displayName)
-    }
-
-    private static func change(history: [WeightEntry], days: Int, unit: WeightUnit) -> String? {
-        guard let latest = history.first else { return nil }
-        let cutoff = DateFormatters.dateOnly.string(
-            from: Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date())
-        guard let past = history.last(where: { $0.date >= cutoff }), past.id != latest.id else { return nil }
-        let value = unit.convert(fromKg: latest.weightKg - past.weightKg)
-        let sign = value >= 0 ? "+" : ""
-        return "\(sign)\(String(format: "%.1f", value)) \(unit.displayName)"
     }
 
     /// Mirrors `WeightViewModel.addWeight(value:date:)` — same unit handling,
@@ -198,13 +177,25 @@ struct WeightTab: View {
     @State var showMilestone = false
     @State var syncFeedback: String?
 
-    /// In-memory re-window — no DB refetch on chip tap (#1092 plan).
-    private var displayPoints: [WeightChartSeries.Point] {
-        guard let days = range.days,
-              let cutoff = Calendar.current.date(byAdding: .day, value: -days, to: Date()) else {
-            return store.allDailyPoints
+    /// The chip's cutoff — verbatim `WeightTabView.swift:51`. It scopes the
+    /// chart HEADER and sizes the visible window; it never filters the plotted
+    /// series, which is what used to blank the card on `1W` (#1220).
+    private var rangeStart: Date? {
+        range.days.flatMap { Calendar.current.date(byAdding: .day, value: -$0, to: Date()) }
+    }
+
+    /// The raw weigh-ins inside the selected range, in display units — iOS's
+    /// `WeightViewModel.loadEntries` slice (`:94-99`), day-aligned STRING
+    /// cutoff and all, so the Average matches across devices.
+    private var rangeRawWeights: [Double] {
+        let entries: [WeightEntry]
+        if let cutoff = rangeStart {
+            let cutoffStr = DateFormatters.dateOnly.string(from: cutoff)
+            entries = store.history.filter { $0.date >= cutoffStr }
+        } else {
+            entries = store.history
         }
-        return store.allDailyPoints.filter { $0.date >= cutoff }
+        return entries.map { store.unit.convert(fromKg: $0.weightKg) }
     }
 
     /// The latest weigh-in when it differs >10% from the one before it — iOS's
@@ -232,8 +223,14 @@ struct WeightTab: View {
                 }
             }
             .background(Theme.background.ignoresSafeArea())
-            // iOS draws NO title on this screen (the Body tab's nav bar is
-            // empty); a large "Weight" header is Android-only chrome.
+            // iOS draws NO nav bar on this screen. `WeightTabView` does carry
+            // `.navigationTitle("Weight")` + a toolbar `+`, but those modifiers
+            // sit on the NavigationStack itself rather than on its content, so
+            // with the tab presented outside any outer navigation context they
+            // are inert — verified on the iPhone 17 Pro sim 2026-08-18: no
+            // title, no toolbar button, range chips flush under the status bar.
+            // Android matches by keeping the bar hidden; logging is the CURRENT
+            // stat cell's ⊕, the same single affordance iOS actually shows.
             .toolbar(.hidden, for: .navigationBar)
             .onAppear { store.reload() }
             .sheet(item: $activeSheet) { request in
@@ -276,42 +273,14 @@ struct WeightTab: View {
         }
     }
 
+    /// iOS's slot order (`WeightTabView.swift:25-73`): range bar → chart →
+    /// big-change banner → insights → history. The old Android order (a
+    /// describeTrend stats card, then a full-width accent CTA iOS does not
+    /// draw, then the chips) pushed the chart below the fold and read as a
+    /// different screen (#1205).
     private var weightScroll: some View {
         ScrollView {
             VStack(spacing: 14) {
-                // Stats header
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("CURRENT").sectionHeading()
-                    Text(store.stats.current)
-                        .font(Theme.rounded(size: Theme.FontSize.display1).monospacedDigit())
-                        .foregroundStyle(Theme.textPrimary)
-                    if !store.stats.trend.isEmpty {
-                        Text(store.stats.trend)
-                            .font(.caption).foregroundStyle(Theme.textSecondary)
-                    }
-                    HStack(spacing: 12) {
-                        if let change = store.stats.change7d {
-                            changeChip("7d", change)
-                        }
-                        if let change = store.stats.change30d {
-                            changeChip("30d", change)
-                        }
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .card()
-
-                Button { presentSheet(editing: nil) } label: {
-                    Label("Log Weight", systemImage: sym("plus.circle.fill"))
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
-                        .background(Theme.accent, in: RoundedRectangle(cornerRadius: Theme.radiusControl, style: .continuous))
-                }.buttonStyle(.plain)
-
-                bigChangeBanner
-
                 // Chart shows from the FIRST weigh-in, matching iOS
                 // (WeightTabView gates on entries.isEmpty only). The old
                 // >= 2 gate left a new user with no graph at all — and
@@ -319,11 +288,25 @@ struct WeightTab: View {
                 // entries, it hid the chart even at two (2026-07-28).
                 if !store.allDailyPoints.isEmpty {
                     rangePicker
-                    if !displayPoints.isEmpty {
-                        WeightChartAndroid(points: displayPoints, unit: store.unit,
-                                           goalChangeKg: store.goalChangeKg,
-                                           isWeekly: store.granularity == .weekly)
-                    }
+                    // No second `isEmpty` gate: the chip windows the series
+                    // instead of filtering it, so there is nothing left that
+                    // can empty the plot (#1220).
+                    WeightChartAndroid(points: store.allDailyPoints,
+                                       rawWeightsInUnit: rangeRawWeights,
+                                       unit: store.unit,
+                                       goalChangeKg: store.goalChangeKg,
+                                       rangeStart: rangeStart,
+                                       isWeekly: store.granularity == .weekly)
+                }
+
+                bigChangeBanner
+
+                if let trend = store.fullTrend {
+                    WeightInsightsView(trend: trend,
+                                       unit: store.unit,
+                                       isLosing: store.isLosing,
+                                       onAddWeight: { presentSheet(editing: nil) },
+                                       onAddBodyComp: { presentSheet(editing: nil) })
                 }
 
                 logSection
@@ -546,19 +529,6 @@ struct WeightTab: View {
                 }.buttonStyle(.plain)
             }
         }
-    }
-
-    private func changeChip(_ label: String, _ change: String) -> some View {
-        // Goal-aware: default goal is losing weight — down = green.
-        let isDown = change.hasPrefix("-")
-        return HStack(spacing: 4) {
-            Text(label).font(.caption2).foregroundStyle(Theme.textSecondary)
-            Text(change)
-                .font(.caption.weight(.semibold).monospacedDigit())
-                .foregroundStyle(isDown ? Theme.deficit : Theme.surplus)
-        }
-        .padding(.horizontal, 8).padding(.vertical, 4)
-        .background(Theme.pillBackground, in: Capsule())
     }
 
     /// `latestBodyComposition()` is read here, on the tap, and handed to the

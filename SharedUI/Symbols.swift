@@ -182,6 +182,10 @@ func sym(_ name: String) -> String {
     case "arrow.right": return "arrow.forward"
     case "arrow.down.right": return "chevron.down"
     case "arrow.up.right": return "chevron.up"
+    // Body-composition empty state (#1205). Material has no standing-figure
+    // glyph, so the person icon carries "your body" — the closest same-meaning
+    // object, never the warning triangle (directive 0a).
+    case "figure.arms.open": return "person"
     default: return name
     }
     #else

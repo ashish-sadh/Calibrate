@@ -59,7 +59,7 @@ struct WeightTabView: View {
 
                         // Compact metrics + weight changes
                         if let fullTrend = viewModel.fullTrend {
-                            WeightInsightsView(trend: fullTrend, unit: viewModel.weightUnit, entries: viewModel.allEntries, isLosing: viewModel.isLosing,
+                            WeightInsightsView(trend: fullTrend, unit: viewModel.weightUnit, isLosing: viewModel.isLosing,
                                               onAddWeight: { showingAddWeight = true },
                                               onAddBodyComp: { showingAddBodyComp = true })
                         }

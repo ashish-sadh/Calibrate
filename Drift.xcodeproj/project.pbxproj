@@ -35,7 +35,6 @@
 		19E2C860D392B8DF81DE183E /* CoachBriefingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEB569EE5A0A07F7611CFA49 /* CoachBriefingView.swift */; };
 		1C57C00A9DAD04EB9EC21313 /* DashboardSkeletons.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA809F63AA1ED36B1AB94C0C /* DashboardSkeletons.swift */; };
 		1D4B4658B68B40350E20F753 /* ComposedFoodEval.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D6EEDE4BB88D55A2579A27D /* ComposedFoodEval.swift */; };
-		1E11E5682458FC83023281D7 /* WeightInsightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A039993077E4BE9F83149249 /* WeightInsightsView.swift */; };
 		1E41F060499A92A9EFB59BE1 /* BiomarkerDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 155E590DFD0A95014B993B9D /* BiomarkerDetailView.swift */; };
 		2007C3F2341DA1EB49016893 /* DescribeMealSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFB4059C65AD94747FA41A1C /* DescribeMealSheet.swift */; };
 		200E4211836365D8B1C3E3EB /* AIChatView+ProposedMealCardAndroid.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD314E3C023FD2016B92E538 /* AIChatView+ProposedMealCardAndroid.swift */; };
@@ -123,6 +122,7 @@
 		7B4B58117970B965B8173DF5 /* WeightSyncHealTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB2B555F5A4A1014221F8575 /* WeightSyncHealTests.swift */; };
 		7C935FE32059C32B18B825C1 /* CreateTemplateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3F34495B2B51D8B1B73906B /* CreateTemplateView.swift */; };
 		7DF0B917D6C991089AC975A5 /* llama.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4101CD9171B652C6B8D1BB4E /* llama.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		80C73223F7CFAA6DF8D4810E /* WeightInsightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD04283488C0E32008E7E062 /* WeightInsightsView.swift */; };
 		8224D8220B6D9328EDDDB648 /* DEXAOverviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5893DE4C163CA3CF50E74C1A /* DEXAOverviewView.swift */; };
 		8271D577C63294790DF81CC4 /* BodySummaryCardsRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F6A3D68A0950A9BAC2E2F3 /* BodySummaryCardsRow.swift */; };
 		86CC5B7F39789A8BD00C6B73 /* ImagePickerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F9385326D93795F70E35EEC /* ImagePickerService.swift */; };
@@ -460,7 +460,6 @@
 		9DB04C0328B001B08B1C76DB /* ServingMultiplierStepperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServingMultiplierStepperTests.swift; sourceTree = "<group>"; };
 		9E17130A18DFB8B4B2773C2F /* SupportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupportView.swift; sourceTree = "<group>"; };
 		9F9F051926CE39DF3E0A47DA /* BodySpecPDFParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodySpecPDFParser.swift; sourceTree = "<group>"; };
-		A039993077E4BE9F83149249 /* WeightInsightsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightInsightsView.swift; sourceTree = "<group>"; };
 		A048685BCBAD258ADEEB3E22 /* IntentRoutingEval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntentRoutingEval.swift; sourceTree = "<group>"; };
 		A19A30BB3C9CCE28A9A758EF /* PhotoLogReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoLogReviewView.swift; sourceTree = "<group>"; };
 		A411F4544692EA6196F07C9C /* MacroRingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacroRingsView.swift; sourceTree = "<group>"; };
@@ -478,6 +477,7 @@
 		AB0560C8A55F7D957B7F4921 /* FocusedSocialViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusedSocialViews.swift; sourceTree = "<group>"; };
 		ABDB900BABC9B592330F2629 /* DriftCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = DriftCore; path = DriftCore; sourceTree = SOURCE_ROOT; };
 		AC5F3236EF7B5CE9409448BD /* NormalizerEval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NormalizerEval.swift; sourceTree = "<group>"; };
+		AD04283488C0E32008E7E062 /* WeightInsightsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightInsightsView.swift; sourceTree = "<group>"; };
 		AE223F71A43F6E379F03A9BE /* ChatIconButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatIconButton.swift; sourceTree = "<group>"; };
 		AFB14EB9D844878B58DA9643 /* BackupSettingsViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupSettingsViewTests.swift; sourceTree = "<group>"; };
 		B05E770510B61596B4D6D9E3 /* PhotoLogViewState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoLogViewState.swift; sourceTree = "<group>"; };
@@ -599,7 +599,6 @@
 			children = (
 				A4BC95967D2043D701CA63AB /* BodyCompEntryView.swift */,
 				1ABDC86BA4516AA3699FE080 /* WeightChartView.swift */,
-				A039993077E4BE9F83149249 /* WeightInsightsView.swift */,
 				E96402659F73046846B409D5 /* WeightTabView.swift */,
 			);
 			path = Weight;
@@ -671,6 +670,7 @@
 				AA84C7363873C87C891C1269 /* V6CoachingNudge.swift */,
 				D5FA2CD3013AC37A9FA85D34 /* VoiceMicButton.swift */,
 				6F1BD4D305C9FA064549D2DF /* WeightEntryView.swift */,
+				AD04283488C0E32008E7E062 /* WeightInsightsView.swift */,
 				3069CAA98DC3C9C56590B1DE /* WeightLogListView.swift */,
 				C1981AE656052532EA6E94AB /* WorkoutDetailView.swift */,
 				842E86DB07844085C6BE92E5 /* WorkoutView.swift */,
@@ -1389,7 +1389,7 @@
 				14D7319F1326E60166987B4C /* WebSearchSettingsCard.swift in Sources */,
 				DFFA7CC42D60E67CB40222E8 /* WeightChartView.swift in Sources */,
 				0747C6B472721162FF994FD5 /* WeightEntryView.swift in Sources */,
-				1E11E5682458FC83023281D7 /* WeightInsightsView.swift in Sources */,
+				80C73223F7CFAA6DF8D4810E /* WeightInsightsView.swift in Sources */,
 				B9494FF35DA9F44FCB646FDA /* WeightLogListView.swift in Sources */,
 				0884D534B3ADDE47643801F8 /* WeightTabView.swift in Sources */,
 				6A4AC25199199579681FCAD4 /* WeightViewModel.swift in Sources */,

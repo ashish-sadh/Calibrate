@@ -1,19 +1,30 @@
 import SwiftUI
 import DriftCore
+#if !os(Android)
+// Swift Charts is absent on SkipUI (skip_fuse_is_the_availability_tree) — the
+// sparklines and the body-composition sheet draw `Path`s on Android instead.
 import Charts
+#endif
+
+/// Which body-composition metric's trend sheet is open. iOS carried three
+/// booleans and three `.sheet` modifiers; Fuse honours only ONE `.sheet` per
+/// view (the trap `ProgressGalleryAndroid` ate), so the selection is a single
+/// identifiable value driving a single `.sheet(item:)`. The `id` doubles as the
+/// sheet title — same three sheets, same copy, one presentation.
+struct BodyCompChartSelection: Identifiable {
+    let id: String
+}
 
 struct WeightInsightsView: View {
     let trend: WeightTrendCalculator.WeightTrend
     let unit: WeightUnit
-    let entries: [WeightEntry]
     var isLosing: Bool = true
     var onAddWeight: (() -> Void)? = nil
     var onAddBodyComp: (() -> Void)? = nil
-    @State private var bodyCompEntries: [BodyComposition] = []
-    @State private var showTrendInfo = false
-    @State private var showingBodyFatChart = false
-    @State private var showingBMIChart = false
-    @State private var showingWaterChart = false
+    // Fuse cannot bridge `private` @State (skip_fuse_cannot_bridge_private_views_or_state).
+    @State var bodyCompEntries: [BodyComposition] = []
+    @State var showTrendInfo = false
+    @State var bodyCompChart: BodyCompChartSelection?
     private func changeColor(_ value: Double) -> Color {
         let isDecrease = value < -0.01
         let isIncrease = value > 0.01
@@ -199,11 +210,15 @@ struct WeightInsightsView: View {
             // Users reported the bar "disappeared" — restore it as an always-on
             // smoothed number, useful even when close to current.
             HStack(spacing: 6) {
+                #if os(Android)
+                BarChartShape().fill(Theme.textTertiary).frame(width: 11, height: 11)
+                #else
                 Image(systemName: "chart.line.downtrend.xyaxis").font(.caption2).foregroundStyle(Theme.textTertiary)
+                #endif
                 Text("Trend Weight: \(String(format: "%.1f", unit.convert(fromKg: trend.currentEMA))) \(unit.displayName)")
                     .font(.caption.monospacedDigit()).foregroundStyle(Theme.textSecondary)
                 Button { showTrendInfo = true } label: {
-                    Image(systemName: "info.circle").font(.caption2).foregroundStyle(Theme.textTertiary)
+                    Image(systemName: sym("info.circle")).font(.caption2).foregroundStyle(Theme.textTertiary)
                 }.buttonStyle(.plain)
                 .accessibilityLabel("Trend weight info")
                 Spacer()
@@ -215,8 +230,19 @@ struct WeightInsightsView: View {
             weightChangesRow
 
             // Body composition cards (from body_composition table)
+            #if os(Android)
+            // The read crosses JNI — off the first compositions, and only once
+            // the store is open (standing rule: no synchronous DB work in an
+            // Android view, directive 0e).
+            bodyCompositionSection
+                .task {
+                    await CoreResourcesBootstrap.warmUpDatabase()
+                    bodyCompEntries = WeightServiceAPI.fetchBodyComposition()
+                }
+            #else
             bodyCompositionSection
                 .onAppear { bodyCompEntries = WeightServiceAPI.fetchBodyComposition() }
+            #endif
 
             // Weekday pattern insight
             if trend.dataPoints.count >= 14 {
@@ -241,7 +267,7 @@ struct WeightInsightsView: View {
                 Spacer()
                 if let onAdd = onAddBodyComp {
                     Button { onAdd() } label: {
-                        Label("Add", systemImage: "plus.circle")
+                        Label("Add", systemImage: sym("plus.circle"))
                             .font(.caption.weight(.medium))
                             .foregroundStyle(Theme.accent)
                     }
@@ -253,7 +279,7 @@ struct WeightInsightsView: View {
                 // Empty state — invite user to add
                 Button { onAddBodyComp?() } label: {
                     HStack {
-                        Image(systemName: "figure.arms.open").foregroundStyle(Theme.textSecondary)
+                        Image(systemName: sym("figure.arms.open")).foregroundStyle(Theme.textSecondary)
                         Text("Track body fat, BMI, water % — tap to add")
                             .font(.caption).foregroundStyle(Theme.textSecondary)
                     }
@@ -271,35 +297,32 @@ struct WeightInsightsView: View {
                     if let latest = bodyCompEntries.first(where: { $0.bodyFatPct != nil }) {
                         let prev = bodyCompEntries.dropFirst().first(where: { $0.bodyFatPct != nil })?.bodyFatPct
                         bodyCompCard(label: "Body Fat", value: latest.bodyFatPct!, unit: "%", previous: prev)
-                            .onTapGesture { showingBodyFatChart = true }
+                            .onTapGesture { bodyCompChart = BodyCompChartSelection(id: "Body Fat %") }
                     }
                     if let latest = bodyCompEntries.first(where: { $0.bmi != nil }) {
                         let prev = bodyCompEntries.dropFirst().first(where: { $0.bmi != nil })?.bmi
                         bodyCompCard(label: "BMI", value: latest.bmi!, unit: "", previous: prev)
-                            .onTapGesture { showingBMIChart = true }
+                            .onTapGesture { bodyCompChart = BodyCompChartSelection(id: "BMI") }
                     }
                     if let latest = bodyCompEntries.first(where: { $0.waterPct != nil }) {
                         let prev = bodyCompEntries.dropFirst().first(where: { $0.waterPct != nil })?.waterPct
                         bodyCompCard(label: "Water", value: latest.waterPct!, unit: "%", previous: prev)
-                            .onTapGesture { showingWaterChart = true }
+                            .onTapGesture { bodyCompChart = BodyCompChartSelection(id: "Water %") }
                     }
                 }
             }
         }
-        .sheet(isPresented: $showingBodyFatChart) {
-            bodyCompChartSheet(title: "Body Fat %", entries: bodyCompEntries.compactMap { e in
-                e.bodyFatPct.map { (date: e.date, value: $0) }
-            })
+        .sheet(item: $bodyCompChart) { selection in
+            bodyCompChartSheet(title: selection.id, entries: bodyCompSeries(for: selection.id))
         }
-        .sheet(isPresented: $showingBMIChart) {
-            bodyCompChartSheet(title: "BMI", entries: bodyCompEntries.compactMap { e in
-                e.bmi.map { (date: e.date, value: $0) }
-            })
-        }
-        .sheet(isPresented: $showingWaterChart) {
-            bodyCompChartSheet(title: "Water %", entries: bodyCompEntries.compactMap { e in
-                e.waterPct.map { (date: e.date, value: $0) }
-            })
+    }
+
+    /// The (date, value) pairs behind one body-composition metric's sheet.
+    private func bodyCompSeries(for title: String) -> [(date: String, value: Double)] {
+        switch title {
+        case "Body Fat %": return bodyCompEntries.compactMap { e in e.bodyFatPct.map { (date: e.date, value: $0) } }
+        case "BMI": return bodyCompEntries.compactMap { e in e.bmi.map { (date: e.date, value: $0) } }
+        default: return bodyCompEntries.compactMap { e in e.waterPct.map { (date: e.date, value: $0) } }
         }
     }
 
@@ -314,7 +337,7 @@ struct WeightInsightsView: View {
             if let prev = previous {
                 let delta = value - prev
                 HStack(spacing: 2) {
-                    Image(systemName: delta < 0 ? "arrow.down.right" : delta > 0 ? "arrow.up.right" : "arrow.right")
+                    Image(systemName: sym(delta < 0 ? "arrow.down.right" : delta > 0 ? "arrow.up.right" : "arrow.right"))
                     Text(String(format: "%+.1f", delta))
                 }
                 .font(.caption2.weight(.semibold))
@@ -324,6 +347,10 @@ struct WeightInsightsView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 12)
         .hairlineCard(cornerRadius: Theme.radiusControl)
+        // Without an explicit hit shape the tap only lands on the drawn text on
+        // Fuse (harness_dead_synthetic_tap_means_contentshape) — the whole tile
+        // opens the trend sheet.
+        .contentShape(Rectangle())
     }
 
     private func bodyCompChartSheet(title: String, entries: [(date: String, value: Double)]) -> some View {
@@ -331,40 +358,50 @@ struct WeightInsightsView: View {
             DateFormatters.dateOnly.date(from: e.date).map { ($0, e.value) }
         }.sorted { $0.date < $1.date }
 
+        #if os(Android)
+        // No NavigationStack wrapper: iOS's `.navigationTitle` here sits on the
+        // stack rather than its content and is inert on BOTH platforms (the
+        // sheet draws no title bar), and on Fuse the wrapper also swallows
+        // `.presentationDetents` — the sheet then took the full screen and left
+        // two thirds of it barren under a 220pt chart. ScrollView root +
+        // detents matches iOS's half-height sheet, and the scroll keeps the
+        // detent from squashing the card (skipui_sheet_detent_compresses).
+        // ContentUnavailableView is not in the Fuse availability tree either,
+        // so the empty branch is a plain VStack.
+        return ScrollView {
+            Group {
+                if parsed.count < 2 {
+                    VStack(spacing: 8) {
+                        BarChartShape().fill(Theme.textTertiary).frame(width: 34, height: 34)
+                        Text("Not enough data").font(.headline).foregroundStyle(Theme.textPrimary)
+                        Text("Log at least 2 entries to see a trend.")
+                            .font(.subheadline).foregroundStyle(Theme.textSecondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 60)
+                } else {
+                    VStack(alignment: .leading, spacing: 12) {
+                        bodyCompSheetHeader(title: title, parsed: parsed)
+                        BodyCompChartAndroid(points: parsed)
+                            .frame(height: 220)
+                    }
+                    .padding()
+                    .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 16))
+                    .padding()
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .background(Theme.background)
+        #else
         return NavigationStack {
             if parsed.count < 2 {
                 ContentUnavailableView("Not enough data", systemImage: "chart.line.uptrend.xyaxis",
                                        description: Text("Log at least 2 entries to see a trend."))
             } else {
                 VStack(alignment: .leading, spacing: 12) {
-                    // Header — matches weight chart style
-                    HStack(alignment: .firstTextBaseline) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Latest").font(.caption2).foregroundStyle(Theme.textTertiary)
-                            HStack(alignment: .firstTextBaseline, spacing: 3) {
-                                Text(String(format: "%.1f", parsed.last?.value ?? 0))
-                                    .font(.title2.weight(.bold).monospacedDigit())
-                                Text(title.contains("%") ? "%" : "")
-                                    .font(.caption).foregroundStyle(Theme.textSecondary)
-                            }
-                        }
-                        Spacer()
-                        if let first = parsed.first?.value, let last = parsed.last?.value {
-                            let diff = last - first
-                            VStack(alignment: .trailing, spacing: 2) {
-                                Text("Change").font(.caption2).foregroundStyle(Theme.textTertiary)
-                                Text(String(format: "%+.1f", diff))
-                                    .font(.title3.weight(.bold).monospacedDigit())
-                                    .foregroundStyle(diff < 0 ? Theme.deficit : diff > 0 ? Theme.surplus : .secondary)
-                            }
-                        }
-                    }
-
-                    // Date range
-                    if let f = parsed.first?.date, let l = parsed.last?.date {
-                        Text("\(DateFormatters.shortDisplay.string(from: f)) – \(DateFormatters.shortDisplay.string(from: l))")
-                            .font(.caption2).foregroundStyle(Theme.textTertiary)
-                    }
+                    bodyCompSheetHeader(title: title, parsed: parsed)
 
                     // Chart — matches weight chart styling
                     Chart {
@@ -416,6 +453,41 @@ struct WeightInsightsView: View {
         .presentationDetents([.medium, .large])
         .scrollContentBackground(.hidden)
         .background(Theme.background)
+        #endif
+    }
+
+    /// Latest value + net change + date range — identical on both platforms;
+    /// only the plot below it differs (Charts vs `Path`).
+    private func bodyCompSheetHeader(title: String, parsed: [(date: Date, value: Double)]) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .firstTextBaseline) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Latest").font(.caption2).foregroundStyle(Theme.textTertiary)
+                    HStack(alignment: .firstTextBaseline, spacing: 3) {
+                        Text(String(format: "%.1f", parsed.last?.value ?? 0))
+                            .font(.title2.weight(.bold).monospacedDigit())
+                        Text(title.contains("%") ? "%" : "")
+                            .font(.caption).foregroundStyle(Theme.textSecondary)
+                    }
+                }
+                Spacer()
+                if let first = parsed.first?.value, let last = parsed.last?.value {
+                    let diff = last - first
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text("Change").font(.caption2).foregroundStyle(Theme.textTertiary)
+                        Text(String(format: "%+.1f", diff))
+                            .font(.title3.weight(.bold).monospacedDigit())
+                            .foregroundStyle(diff < 0 ? Theme.deficit : diff > 0 ? Theme.surplus : .secondary)
+                    }
+                }
+            }
+
+            // Date range
+            if let f = parsed.first?.date, let l = parsed.last?.date {
+                Text("\(DateFormatters.shortDisplay.string(from: f)) – \(DateFormatters.shortDisplay.string(from: l))")
+                    .font(.caption2).foregroundStyle(Theme.textTertiary)
+            }
+        }
     }
 
     // MARK: - Weekday Pattern
@@ -434,11 +506,15 @@ struct WeightInsightsView: View {
         }
         guard averages.count >= 5 else { return AnyView(EmptyView()) } // need most days
 
-        let dayNames = ["", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+        // Full weekday names, localized. Pluralising the 3-letter abbreviation
+        // produced "Thus" (reads as the word "thus"), "Weds", "Tues" — the
+        // abbreviation is not a noun you can add "s" to.
+        let dayNames = [""] + DateFormatters.weekdayNames
         let lightest = averages.min(by: { $0.value < $1.value })
         let heaviest = averages.max(by: { $0.value < $1.value })
 
-        guard let light = lightest, let heavy = heaviest, light.key != heavy.key else {
+        guard let light = lightest, let heavy = heaviest, light.key != heavy.key,
+              light.key < dayNames.count, heavy.key < dayNames.count else {
             return AnyView(EmptyView())
         }
 
@@ -475,14 +551,28 @@ struct WeightInsightsView: View {
             // visually on its own without needing a border.
             HStack(spacing: 4) {
                 if let labelIcon {
+                    #if os(Android)
+                    // The chart-family names have no glyph under the pinned
+                    // skip-ui 1.58 (sym() targets chart.bar.xaxis, a 1.59+
+                    // name) — drawn bars instead, same precedent as
+                    // WorkoutView / ClientDetailView (ChartGlyph.swift).
+                    if labelIcon.hasPrefix("chart.") {
+                        BarChartShape().fill(Theme.textSecondary).frame(width: 11, height: 11)
+                    } else {
+                        Image(systemName: sym(labelIcon))
+                            .font(.caption2)
+                            .foregroundStyle(Theme.textSecondary)
+                    }
+                    #else
                     Image(systemName: labelIcon)
                         .font(.caption2)
                         .foregroundStyle(Theme.textSecondary)
+                    #endif
                 }
                 Text(label.uppercased())
                     .sectionHeading()
                 if let direction {
-                    Image(systemName: direction)
+                    Image(systemName: sym(direction))
                         .font(.caption2.weight(.bold))
                         .foregroundStyle(directionColor ?? color)
                 }
@@ -553,7 +643,7 @@ struct WeightInsightsView: View {
                     .font(.subheadline.weight(.semibold).monospacedDigit())
                     .foregroundStyle(color)
                 HStack(spacing: 3) {
-                    Image(systemName: directionIcon(value)).font(.caption2.weight(.bold))
+                    Image(systemName: sym(directionIcon(value))).font(.caption2.weight(.bold))
                     Text(directionWord(value)).font(.caption)
                 }
                 .foregroundStyle(color)
@@ -577,6 +667,15 @@ struct WeightInsightsView: View {
     private func changeSparkline(days: Int, color: Color) -> some View {
         let pts = emaWindow(days: days)
         if pts.count >= 2 {
+            #if os(Android)
+            // Charts is absent on SkipUI — a polyline `Path` instead, decimated
+            // to at most 24 vertices: every Path command is one JNI hop
+            // (skipui_fuse_perf_facts) and the 90-day row alone would push 90.
+            SparklineShape(values: Self.decimate(pts, to: 24))
+                .stroke(color.opacity(0.85),
+                        style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
+                .frame(width: 58, height: 22)
+            #else
             Chart {
                 ForEach(pts.indices, id: \.self) { i in
                     LineMark(x: .value("i", i), y: .value("w", pts[i]))
@@ -588,9 +687,18 @@ struct WeightInsightsView: View {
             .chartYAxis(.hidden)
             .chartYScale(domain: .automatic(includesZero: false))
             .frame(width: 58, height: 22)
+            #endif
         } else {
             Color.clear.frame(width: 58, height: 22)
         }
+    }
+
+    /// Evenly-sampled subset of `values` (endpoints always kept) so a long
+    /// window still draws a bounded number of `Path` commands.
+    static func decimate(_ values: [Double], to maxCount: Int) -> [Double] {
+        guard values.count > maxCount, maxCount >= 2 else { return values }
+        let step = Double(values.count - 1) / Double(maxCount - 1)
+        return (0..<maxCount).map { values[Int((Double($0) * step).rounded())] }
     }
 
     /// Trend (EMA) weights over the trailing `days` window, in display units.
@@ -601,7 +709,9 @@ struct WeightInsightsView: View {
     }
 }
 
-private extension View {
+// Not `private`: Fuse cannot bridge private declarations
+// (skip_fuse_cannot_bridge_private_views_or_state).
+extension View {
     /// White card surface + V7 hairline. The Body screen's stat tiles use a
     /// raw background (not `.card()`, so no shadow lift) — on the #EFEFF1 page
     /// a borderless white tile is near-invisible (the "poor render" the metric
@@ -611,9 +721,123 @@ private extension View {
     /// `CardStyle` dropped.
     func hairlineCard(cornerRadius: CGFloat) -> some View {
         background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .strokeBorder(Theme.separator, lineWidth: 1)
-            )
+            .overlay(hairlineBorder(cornerRadius: cornerRadius))
+    }
+
+    /// iOS keeps `strokeBorder`; Fuse declares two `strokeBorder` overload
+    /// families and the call goes ambiguous, so Android draws a plain stroke
+    /// (half a point of inset on a 1pt hairline — imperceptible; house
+    /// precedent MealCalendarPicker.todayRing / ExerciseVoiceLogSheet).
+    @ViewBuilder
+    func hairlineBorder(cornerRadius: CGFloat) -> some View {
+        #if os(Android)
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            .stroke(Theme.separator, lineWidth: 1)
+        #else
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            .strokeBorder(Theme.separator, lineWidth: 1)
+        #endif
     }
 }
+
+#if os(Android)
+
+/// The change table's sparkline as a `Path`: Swift Charts has no SkipUI
+/// equivalent, and a 58×22 polyline is the whole mark iOS draws.
+struct SparklineShape: Shape {
+    let values: [Double]
+
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        guard values.count >= 2 else { return p }
+        let lo = values.min() ?? 0
+        let hi = values.max() ?? 0
+        // A perfectly flat window would divide by zero — draw it mid-height.
+        let span = max(0.0001, hi - lo)
+        let dx = rect.width / CGFloat(values.count - 1)
+        for (i, v) in values.enumerated() {
+            let y = hi == lo ? rect.midY
+                : rect.maxY - CGFloat((v - lo) / span) * rect.height
+            let pt = CGPoint(x: rect.minX + CGFloat(i) * dx, y: y)
+            if i == 0 { p.move(to: pt) } else { p.addLine(to: pt) }
+        }
+        return p
+    }
+}
+
+/// Android's stand-in for the body-composition trend `Chart`: accent polyline +
+/// point dots, a dashed rule at the latest value, and that value labelled at
+/// the trailing edge — the same reading the iOS `RuleMark` annotation gives.
+/// Deliberately NOT extracted into a shared chart type with `WeightChartPlot`:
+/// this is occurrence two, and the tenet is three similar lines before
+/// abstracting (#1147's biomarker chart is the third).
+struct BodyCompChartAndroid: View {
+    let points: [(date: Date, value: Double)]
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 4) {
+            GeometryReader { geo in
+                plot(in: geo.size)
+            }
+            .drawingGroup()
+            VStack {
+                Text(String(format: "%.1f", domain.hi))
+                Spacer()
+                Text(String(format: "%.1f", domain.lo))
+            }
+            .font(.caption2).foregroundStyle(Theme.textTertiary)
+            .frame(width: 34)
+        }
+    }
+
+    private var domain: (lo: Double, hi: Double) {
+        let values = points.map(\.value)
+        let lo = values.min() ?? 0
+        let hi = values.max() ?? 0
+        let pad = max(0.2, (hi - lo) * 0.12)
+        return (lo - pad, hi + pad)
+    }
+
+    @ViewBuilder
+    private func plot(in size: CGSize) -> some View {
+        if size.width > 0, size.height > 0, points.count >= 2 {
+            let d = domain
+            let range = max(0.001, d.hi - d.lo)
+            let first = points[0].date
+            let span = max(1, points[points.count - 1].date.timeIntervalSince(first))
+            let xs = points.map { CGFloat($0.date.timeIntervalSince(first) / span) * size.width }
+            let ys = points.map { size.height - CGFloat(($0.value - d.lo) / range) * size.height }
+            ZStack(alignment: .topLeading) {
+                Path { p in
+                    p.move(to: CGPoint(x: 0, y: ys[ys.count - 1]))
+                    p.addLine(to: CGPoint(x: size.width, y: ys[ys.count - 1]))
+                }
+                .stroke(Theme.accent.opacity(0.4), style: StrokeStyle(lineWidth: 1.5, dash: [3, 4]))
+
+                Path { p in
+                    for i in xs.indices {
+                        let pt = CGPoint(x: xs[i], y: ys[i])
+                        if i == 0 { p.move(to: pt) } else { p.addLine(to: pt) }
+                    }
+                }
+                .stroke(Theme.accent, style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
+
+                Path { p in
+                    for i in xs.indices {
+                        p.addEllipse(in: CGRect(x: xs[i] - 2.5, y: ys[i] - 2.5, width: 5, height: 5))
+                    }
+                }
+                .fill(Theme.accent)
+
+                Text(String(format: "%.1f", points[points.count - 1].value))
+                    .font(.caption.weight(.bold).monospacedDigit())
+                    .foregroundStyle(Theme.accent)
+                    .fixedSize()
+                    .position(x: max(size.width - 22, 22),
+                              y: max(ys[ys.count - 1] - 20, 10))
+            }
+        }
+    }
+}
+
+#endif

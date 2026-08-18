@@ -69,6 +69,23 @@ public enum DateFormatters {
         return f
     }()
 
+    /// Display format: "Mar 2026" — chart axis ticks on a multi-month span,
+    /// matching iOS's `.dateTime.month(.abbreviated).year()`.
+    public static let shortMonthYear: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "MMM yyyy"
+        f.timeZone = localZone
+        return f
+    }()
+
+    /// Display format: "2026" — chart axis ticks on a multi-year span.
+    public static let yearOnly: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy"
+        f.timeZone = localZone
+        return f
+    }()
+
     /// Short time display: "8:30 AM"
     public static let shortTime: DateFormatter = {
         let f = DateFormatter()
@@ -90,4 +107,16 @@ public enum DateFormatters {
     public static var todayString: String {
         dateOnly.string(from: Date())
     }
+
+    /// Full weekday names in `Calendar.weekday` order (index 0 = Sunday), for
+    /// prose that has to inflect the day — "You tend to weigh least on
+    /// Mondays". The 3-letter abbreviations cannot be pluralised: "Thu" + "s"
+    /// reads as the word *thus*, "Tue" + "s" as the abbreviation "Tues".
+    public static let weekdayNames: [String] = {
+        let f = DateFormatter()
+        f.timeZone = localZone
+        let symbols = f.weekdaySymbols ?? []
+        return symbols.count == 7 ? symbols
+            : ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+    }()
 }
