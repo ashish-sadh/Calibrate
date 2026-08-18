@@ -232,7 +232,13 @@ struct WeightTab: View {
             // Android matches by keeping the bar hidden; logging is the CURRENT
             // stat cell's ⊕, the same single affordance iOS actually shows.
             .toolbar(.hidden, for: .navigationBar)
-            .onAppear { store.reload() }
+            .onAppear {
+                // #1239, mirror of WeightTabView.swift:176 — see TodayTab's
+                // note: without it Drift Coach opened on Body still believing
+                // the user was on whatever tab set the tracker last.
+                AIScreenTracker.shared.currentScreen = .weight
+                store.reload()
+            }
             .sheet(item: $activeSheet) { request in
                 WeightEntryView(
                     unit: request.unit,

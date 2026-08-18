@@ -23,6 +23,11 @@ import Testing
 ///
 /// The rule the two incidents share: `DriftAndroidApp` must mirror *every*
 /// `DriftApp.init()` launch call, not just the `DriftPlatform` seams.
+///
+/// The same rule reaches past launch into the Android-only tab hosts: a screen
+/// that iOS wires from `Drift/Views/**` owes that wiring in its Android
+/// re-creation, because the iOS file never compiles here. #1239 is that shape —
+/// `AIScreenTracker` had no `.dashboard`/`.weight` setter on Android at all.
 @Suite struct AndroidLaunchWiringTests {
 
     /// Calls the Android shell owes at launch, each with the reason it exists
@@ -88,6 +93,32 @@ import Testing
         let body = source[launchRange.lowerBound..<trendRange.lowerBound]
         #expect(!body.contains("else { return }"),
                 "No early return may sit between onLaunch()'s start and the launch refreshes — an unavailable Health Connect must not skip them")
+    }
+
+    // MARK: - Tab-host wiring
+
+    /// Lines an Android-only tab host owes because its iOS counterpart carries
+    /// them and that file never compiles on Android.
+    static let requiredTabHostLines: [(file: String, line: String, why: String)] = [
+        ("TodayTab.swift", "AIScreenTracker.shared.currentScreen = .dashboard",
+         "#1239 — mirror of DashboardView.swift:337. Nothing else on Android ever resets the tracker to .dashboard, so one visit to Workout/Food/Supplements latched Drift Coach on that screen for the rest of the process: wrong greeting, wrong suggestion pills, and ToolRanker applying the wrong per-screen boosts (ToolRanker.swift:30 defaultTools padding, :99 profile.screens) so the same query ranks tools differently than on iPhone"),
+        ("WeightTab.swift", "AIScreenTracker.shared.currentScreen = .weight",
+         "#1239 — mirror of WeightTabView.swift:176; same latch, and without it the weight-query profile's .weight boost never applies on Android"),
+    ]
+
+    /// The setters live on each host's `.onAppear`, which re-fires on every tab
+    /// arrival only because `ContentView.tabContent` carries `.id(selectedTab)`
+    /// and Compose therefore tears the outgoing tab down. If that `.id` is ever
+    /// removed (e.g. to preserve scroll position, #1260), these assertions keep
+    /// passing while the tracker silently latches again — whoever removes it
+    /// owes the setters a new home, `onChange(of: selectedTab)` being the
+    /// obvious one.
+    @Test func androidTabHostsSetTheScreenTracker() throws {
+        for required in Self.requiredTabHostLines {
+            let source = try Self.shellFile(required.file)
+            #expect(source.contains(required.line),
+                    "\(required.file) must set the AI screen tracker when the tab appears — \(required.why)")
+        }
     }
 
     // MARK: - Source access

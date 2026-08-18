@@ -329,7 +329,19 @@ struct TodayTab: View {
                 .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 100)
             }
             .background(Theme.background.ignoresSafeArea())
-            .onAppear { store.reload() }
+            .onAppear {
+                // #1239. iOS sets this from DashboardView.swift:337; Android's
+                // Today is this Android-only host, so the mirror lives here or
+                // nowhere — and "nowhere" latched Drift Coach on whichever tab
+                // was visited last: the greeting, the suggestion pills AND
+                // ToolRanker's per-screen boosts all read this value. Re-fires
+                // on every arrival because ContentView tags tabContent with
+                // .id(selectedTab) (ContentView.swift:46), which tears the
+                // outgoing tab down; if that .id ever goes, this goes stale
+                // silently.
+                AIScreenTracker.shared.currentScreen = .dashboard
+                store.reload()
+            }
             // TodayStore's .foodEntryAdded observer refreshes the dashboard,
             // but onDismiss also covers the cancel path's ring re-check.
             // fullScreenCover, not sheet: iOS presents Photo Log edge-to-edge
