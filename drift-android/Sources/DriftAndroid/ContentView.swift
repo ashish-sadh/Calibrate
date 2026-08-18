@@ -6,6 +6,23 @@ import DriftCore
 struct ContentView: View {
     @State var selectedTab: PrimaryTab = .today
     @State var showingCoach = false
+    // #1216. Compose applies the IME inset to the window, so opening the
+    // keyboard SHRINKS this ZStack — the bottom-aligned overlay row below then
+    // rides up and parks on top of the keyboard, while the clearance spacer
+    // stays stranded above it. Measured on build 108 (1080x2400 @ 420dpi): the
+    // pill bar jumped from y=2270px to y=1450px, leaving 51dp between the
+    // Friends search field and the bar where a result row needs ~60 — so you
+    // type a handle and the only match is drawn behind the bar until you
+    // dismiss the keyboard. iOS never shows this: its clearance is UIKit
+    // `additionalSafeAreaInsets` and the iOS keyboard OVERLAYS the tab bar.
+    //
+    // Hiding the row while the IME is up (and zeroing the clearance with it) is
+    // standard Android bottom-nav behavior, so it reads as native rather than
+    // as a workaround — and it reclaims the full ~110dp instead of just
+    // un-occluding it. These two are NOT private: Fuse cannot bridge private
+    // @State (the errors point at line 1), same as `selectedTab`.
+    @State var imeVisible = false
+    @State var imeBaseline: CGSize = .zero
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -51,21 +68,28 @@ struct ContentView: View {
                     Color.clear.frame(height: bottomOverlayClearance)
                 }
 
-            VStack(spacing: 0) {
-                // Strong-style minimized-workout pill (#1167) — visible on every
-                // tab, taps to resume the live sheet. It owns its own bottom gap,
-                // so an empty bar reserves no space.
-                MinimizedWorkoutBar()
+            // Hidden while the keyboard is up (#1216) — see `imeVisible`.
+            if !imeVisible {
+                VStack(spacing: 0) {
+                    // Strong-style minimized-workout pill (#1167) — visible on every
+                    // tab, taps to resume the live sheet. It owns its own bottom gap,
+                    // so an empty bar reserves no space.
+                    MinimizedWorkoutBar()
+                        .padding(.horizontal, 10)
+                    HStack(spacing: 8) {
+                        PillTabBar(selected: $selectedTab)
+                            .frame(maxWidth: .infinity)
+                        ChatIconButton(isPresented: $showingCoach)
+                    }
                     .padding(.horizontal, 10)
-                HStack(spacing: 8) {
-                    PillTabBar(selected: $selectedTab)
-                        .frame(maxWidth: .infinity)
-                    ChatIconButton(isPresented: $showingCoach)
+                    .padding(.bottom, 6)
                 }
-                .padding(.horizontal, 10)
-                .padding(.bottom, 6)
+                // Alpha-only, like the tab cross-fade at :30 — Compose fadeIn/Out
+                // is real on SkipUI, so the row doesn't slide with the keyboard.
+                .transition(.opacity)
             }
         }
+        .background(imeProbe)
         .background(Theme.background.ignoresSafeArea())
         .onAppear { LiveWorkoutMonitor.shared.refresh() }
         .onChange(of: LiveWorkoutMonitor.shared.wantsResume) { _, wants in
@@ -94,9 +118,49 @@ struct ContentView: View {
     /// condition as `MinimizedWorkoutBar.body`, which is what keeps the two from
     /// disagreeing.
     private var bottomOverlayClearance: CGFloat {
+        // Nothing is drawn down there while the keyboard is up (#1216), and this
+        // is not a real safe-area inset on Android — the SkipUICompat shim
+        // stacks it as a plain VStack spacer under the content, so leaving it at
+        // 78 would strand a dead band directly above the IME and make hiding the
+        // row a no-op for the content that needed the space.
+        if imeVisible { return 0 }
         let monitor = LiveWorkoutMonitor.shared
         let pillShowing = !monitor.isPresented && monitor.minimizedName != nil
         return pillShowing ? 78 + 56 : 78
+    }
+
+    /// Zero-cost IME detector: a `Color.clear` leaf that reports the shell
+    /// root's height. It backs the ZStack rather than wrapping the content, so
+    /// the per-frame GeometryReader recomposition never touches the view tree,
+    /// and the `@State` write originates inside skip-ui's own composition loop
+    /// (the proven repaint path — unlike a bridged/Kotlin callback, #1180).
+    private var imeProbe: some View {
+        GeometryReader { geo in
+            Color.clear
+                .onAppear { rootGeometryChanged(width: geo.size.width, height: geo.size.height) }
+                .onChange(of: geo.size.height) { _, height in
+                    rootGeometryChanged(width: geo.size.width, height: height)
+                }
+        }
+    }
+
+    /// Treats "the root got shorter at the same width" as the keyboard opening.
+    ///
+    /// Any WIDER/NARROWER width (rotation, multi-window) or any TALLER height
+    /// re-baselines instead, which also self-heals the first composition when it
+    /// reports 0. Threshold is 150pt because the emulator IME measures ~312dp
+    /// (820px @ 420dpi) and nothing else transiently removes that much height at
+    /// a constant width. Known cosmetic residual, deliberately not engineered
+    /// around: rotating WHILE the keyboard is open re-baselines to the shrunk
+    /// size, so the row can reappear over the IME until it is closed once.
+    private func rootGeometryChanged(width: CGFloat, height: CGFloat) {
+        if width != imeBaseline.width || height > imeBaseline.height {
+            imeBaseline = CGSize(width: width, height: height)
+        }
+        let visible = (imeBaseline.height - height) > 150
+        if visible != imeVisible {
+            withAnimation(.easeInOut(duration: 0.15)) { imeVisible = visible }
+        }
     }
 
     @ViewBuilder
