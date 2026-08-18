@@ -499,8 +499,12 @@ struct WeightTab: View {
     private func syncFromHealthConnect() async {
         syncFeedback = "Syncing…"
         do {
-            guard let health = DriftPlatform.health else { return }
-            try await health.requestAuthorization()
+            let health = HealthConnectService.shared
+            // #1207: wait for the real permission answer — `requestAuthorization()`
+            // returns while the grant sheet is still up, so the resync below
+            // used to read permissions the user hadn't granted yet and import
+            // nothing on the first tap.
+            _ = await health.requestAuthorizationInteractive()
             let count = try await health.fullResyncWeight()
             store.reload()
             syncFeedback = count > 0 ? nil :

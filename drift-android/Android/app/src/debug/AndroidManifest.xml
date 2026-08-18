@@ -5,6 +5,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.health.WRITE_WEIGHT" />
     <uses-permission android:name="android.permission.health.WRITE_EXERCISE" />
+    <uses-permission android:name="android.permission.health.WRITE_BODY_FAT" />
     <!-- debugSeedExerciseSession() also writes the session's active-calorie
          total so the Health Connect band has a non-zero number to show. -->
     <uses-permission android:name="android.permission.health.WRITE_ACTIVE_CALORIES_BURNED" />

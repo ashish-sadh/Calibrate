@@ -102,6 +102,10 @@ open class MainActivity: AppCompatActivity {
             androidx.health.connect.client.PermissionController.createRequestPermissionResultContract()
         ) { granted ->
             logger.info("Health Connect permissions granted: ${granted.size}")
+            // Hand the result to the facade's companion so the Swift side can
+            // poll it — without this the sync races the sheet and reads
+            // permissions the user hasn't granted yet (#1207).
+            HealthConnectFacade.onPermissionFlowCompleted(granted.size)
         }
 
         // Photo Picker (image-in seam #1128) — same rule as above: the contract

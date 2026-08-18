@@ -23,6 +23,7 @@
     <uses-permission android:name="android.permission.health.READ_SLEEP" />
     <uses-permission android:name="android.permission.health.READ_HEIGHT" />
     <uses-permission android:name="android.permission.health.READ_EXERCISE" />
+    <uses-permission android:name="android.permission.health.READ_BODY_FAT" />
 
     <!-- Camera capture for Snap meal logging (#1111) — the runtime prompt is
          requested from a deliberate user action (tapping "Take Photo"), same

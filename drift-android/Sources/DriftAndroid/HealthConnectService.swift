@@ -2,6 +2,13 @@ import Foundation
 import SkipFuse
 import DriftCore
 
+/// What a user-initiated permission ask actually did. `denied` is the one
+/// that needs an escape hatch: Android stops showing the sheet once a denial
+/// is USER_FIXED, so re-tapping the button can never recover on its own.
+public enum HealthPermissionOutcome: Sendable {
+    case alreadyGranted, granted, partial, denied, unavailable, timedOut
+}
+
 /// Health Connect adapter — the Android half of the `DriftPlatform.health`
 /// seam (HealthKit fills it on iOS). Reads weights written by other apps
 /// (scale apps like Renpho), plus steps/calories/sleep from trackers.
@@ -17,6 +24,12 @@ public final class HealthConnectService: HealthDataProvider {
     private static let facadeClass = "drift.android.HealthConnectFacade"
     /// Weight-sync anchor: epoch millis of the newest record we've ingested.
     private static let anchorKey = "hcWeightAnchorMillis"
+    /// Permission-sheet poll cadence + a hard cap, so a user who wanders off
+    /// inside Health Connect leaves a loop that ends rather than one that
+    /// spins forever (#1235's lesson).
+    private static let pollSeconds: Double = 0.25
+    private static let pollNanos: UInt64 = 250_000_000
+    private static let permissionWaitCapSeconds: Double = 180
 
     // MARK: - Facade plumbing
 
@@ -42,9 +55,23 @@ public final class HealthConnectService: HealthDataProvider {
     private static func facadeHasAllPermissions() throws -> Bool {
         try AnyDynamicObject(className: facadeClass, arguments: []).hasAllPermissions() as Bool? ?? false
     }
-    private static func facadeRequestPermissions() throws {
-        // Discarded dynamic calls are ambiguous — pin the Void return.
-        let _: Void? = try AnyDynamicObject(className: facadeClass, arguments: []).requestPermissions()
+    private static func facadeHasAllReadPermissions() throws -> Bool {
+        try AnyDynamicObject(className: facadeClass, arguments: []).hasAllReadPermissions() as Bool? ?? false
+    }
+    private static func facadeRequestPermissions() -> Bool {
+        (try? AnyDynamicObject(className: facadeClass, arguments: []).requestPermissions() as Bool?) ?? false
+    }
+    private static func facadePermissionFlowPoll() -> Int {
+        (try? AnyDynamicObject(className: facadeClass, arguments: []).permissionFlowPoll() as Int?) ?? 0
+    }
+    private static func facadePermissionFlowGrantedCount() -> Int {
+        (try? AnyDynamicObject(className: facadeClass, arguments: []).permissionFlowGrantedCount() as Int?) ?? -1
+    }
+    private static func facadeOpenSettings() -> Bool {
+        (try? AnyDynamicObject(className: facadeClass, arguments: []).openHealthConnectSettings() as Bool?) ?? false
+    }
+    private static func facadeReadBodyFatJson(_ start: Int64, _ end: Int64) throws -> String {
+        try AnyDynamicObject(className: facadeClass, arguments: []).readBodyFatJson(start, end) as String? ?? "[]"
     }
     private static func facadeReadWeightsJson(_ start: Int64, _ end: Int64) throws -> String {
         try AnyDynamicObject(className: facadeClass, arguments: []).readWeightsJson(start, end) as String? ?? "[]"
@@ -68,7 +95,12 @@ public final class HealthConnectService: HealthDataProvider {
     private static func facadePing() throws -> String? { nil }
     private static func facadeAvailability() -> Int { 0 }
     private static func facadeHasAllPermissions() throws -> Bool { false }
-    private static func facadeRequestPermissions() throws {}
+    private static func facadeHasAllReadPermissions() throws -> Bool { false }
+    private static func facadeRequestPermissions() -> Bool { false }
+    private static func facadePermissionFlowPoll() -> Int { 0 }
+    private static func facadePermissionFlowGrantedCount() -> Int { -1 }
+    private static func facadeOpenSettings() -> Bool { false }
+    private static func facadeReadBodyFatJson(_ start: Int64, _ end: Int64) throws -> String { "[]" }
     private static func facadeReadWeightsJson(_ start: Int64, _ end: Int64) throws -> String { "[]" }
     private static func facadeReadStepsJson(_ start: Int64, _ end: Int64) throws -> String { "{}" }
     private static func facadeReadCaloriesJson(_ start: Int64, _ end: Int64) throws -> String { "{}" }
@@ -108,12 +140,55 @@ public final class HealthConnectService: HealthDataProvider {
         Self.facadeAvailability() == 1
     }
 
+    /// Ask, don't wait. The launch catch-up (`DriftAndroidApp.onLaunch`) runs
+    /// this ahead of the weight-trend + TDEE refresh, so blocking on a sheet
+    /// the user can sit on for minutes would strand both (#1212's failure
+    /// mode). User-initiated syncs call `requestAuthorizationInteractive()`,
+    /// which does wait for the real answer.
     @MainActor public func requestAuthorization() async throws {
-        _ = try await Self.onFacadeQueue { () -> Bool in
-            if try Self.facadeHasAllPermissions() { return true }
-            try Self.facadeRequestPermissions()
-            return false
+        if try await Self.onFacadeQueue({ try Self.facadeHasAllPermissions() }) { return }
+        // launch() fires an Activity contract — main thread only, and
+        // @MainActor IS the Android main looper.
+        _ = Self.facadeRequestPermissions()
+    }
+
+    /// Await the real permission answer before returning, so the sync that
+    /// follows can't run while the grant sheet is still on screen (#1207 — the
+    /// first tap used to import nothing, every time). The result arrives as
+    /// companion state on the Kotlin facade because an Activity result cannot
+    /// call back across Skip's bridge, so it has to be polled.
+    @MainActor public func requestAuthorizationInteractive() async -> HealthPermissionOutcome {
+        if (try? await Self.onFacadeQueue { try Self.facadeHasAllReadPermissions() }) == true {
+            return .alreadyGranted
         }
+        guard Self.facadeRequestPermissions() else { return .unavailable }
+
+        var waited: Double = 0
+        while waited < Self.permissionWaitCapSeconds {
+            try? await Task.sleep(nanoseconds: Self.pollNanos)
+            waited += Self.pollSeconds
+            let status = (try? await Self.onFacadeQueue { Self.facadePermissionFlowPoll() }) ?? 0
+            guard status == 2 else { continue }   // 1 = sheet still up
+            let granted = (try? await Self.onFacadeQueue { Self.facadePermissionFlowGrantedCount() }) ?? 0
+            // Zero grants after a completed flow means denied — and once
+            // Android marks the denial USER_FIXED the sheet silently
+            // auto-dismisses, so the button alone can never recover.
+            if granted <= 0 { return .denied }
+            let all = (try? await Self.onFacadeQueue { try Self.facadeHasAllReadPermissions() }) ?? false
+            return all ? .granted : .partial
+        }
+        return .timedOut
+    }
+
+    /// 1 available · 2 provider update required · 0 unavailable. Concrete-class
+    /// member on purpose: `HealthDataProvider` must not grow a tri-state only
+    /// one platform has.
+    @MainActor public var availability: Int { Self.facadeAvailability() }
+
+    /// Route out of a terminal denial — opens Health Connect's own permission
+    /// screen. False when nothing on the device could handle it.
+    @MainActor @discardableResult public func openHealthConnectSettings() -> Bool {
+        Self.facadeOpenSettings()
     }
 
     @MainActor public func fetchUserProfile() async -> HealthUserProfile {
@@ -280,5 +355,35 @@ public final class HealthConnectService: HealthDataProvider {
     @MainActor public func fetchHRVHistory(days: Int) async throws -> [(date: Date, ms: Double)] { [] }
     @MainActor public func fetchRestingHeartRateHistory(days: Int) async throws -> [(date: Date, bpm: Double)] { [] }
     @MainActor public func fetchRespiratoryRateHistory(days: Int) async throws -> [(date: Date, rpm: Double)] { [] }
-    @MainActor public func syncBodyComposition() async throws -> Int { 0 }
+    /// Body fat % from Health Connect → body_composition, mirroring iOS's
+    /// 90-day window and dedup (`HealthKitService.syncBodyComposition`). No
+    /// BMI: Health Connect has no BMI record type, and deriving one from
+    /// weight+height would be fabricating a reading the user never took.
+    @MainActor public func syncBodyComposition() async throws -> Int {
+        let end = Date()
+        let start = end.addingTimeInterval(-90 * 86400)
+        let raw = try await Self.onFacadeQueue {
+            try Self.facadeReadBodyFatJson(
+                Int64(start.timeIntervalSince1970 * 1000),
+                Int64(end.timeIntervalSince1970 * 1000) + 60_000
+            )
+        }
+        let records = Self.jsonArray(raw)
+        guard !records.isEmpty else { return 0 }
+
+        let existing = (try? AppDatabase.shared.fetchBodyComposition()) ?? []
+        var count = 0
+        for record in records {
+            guard let date = record["date"] as? String,
+                  let pct = record["pct"] as? Double, pct > 0 else { continue }
+            // Health Connect's Percentage is ALREADY 0-100 — iOS multiplies by
+            // 100 only because HealthKit stores 0.0-1.0.
+            if existing.contains(where: { $0.date == date && $0.source == "healthkit" }) { continue }
+            var entry = BodyComposition(date: date, bodyFatPct: pct, source: "healthkit")
+            try AppDatabase.shared.saveBodyComposition(&entry)
+            count += 1
+        }
+        logger.info("HealthConnect body-comp sync: \(records.count) day-records, \(count) saved")
+        return count
+    }
 }

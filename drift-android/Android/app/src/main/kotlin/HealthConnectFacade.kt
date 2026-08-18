@@ -1,12 +1,14 @@
 package drift.android
 
 import android.content.Context
+import android.content.Intent
 import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultLauncher
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.PermissionController
 import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.ActiveCaloriesBurnedRecord
+import androidx.health.connect.client.records.BodyFatRecord
 import androidx.health.connect.client.records.ExerciseSessionRecord
 import androidx.health.connect.client.records.HeightRecord
 import androidx.health.connect.client.records.SleepSessionRecord
@@ -36,9 +38,33 @@ class HealthConnectFacade {
         /// Registered by MainActivity.onCreate (Activity-lifecycle-bound contract).
         @JvmField
         var permissionLauncher: ActivityResultLauncher<Set<String>>? = null
+
+        /// Permission-sheet result, polled from Swift — an Activity result is
+        /// an inherently deferred callback and Skip's bridge can deliver no
+        /// Kotlin→Swift callback, so it comes back as companion state (same
+        /// shape as CameraCaptureFacade/ImagePickerFacade). Swift builds a
+        /// FRESH facade instance per call, so instance fields would be lost.
+        /// 0 idle · 1 sheet up · 2 finished.
+        @Volatile private var permissionFlowStatus = 0
+
+        /// How many permissions the sheet came back with. -1 = never ran.
+        /// Deliberately a COUNT, not a verdict: the sheet can return a partial
+        /// grant, and Swift re-derives the truth from `hasAllReadPermissions`
+        /// plus the sync that follows.
+        @Volatile private var permissionFlowGranted = -1
+
+        /// MainActivity's registered permission callback lands here (main thread).
+        fun onPermissionFlowCompleted(grantedCount: Int) {
+            permissionFlowGranted = grantedCount
+            permissionFlowStatus = 2
+        }
     }
 
-    private val readPermissions = setOf(
+    /// What the LAUNCH catch-up treats as "fully granted". Body fat is
+    /// deliberately excluded: the launch path re-fires the sheet whenever this
+    /// is false, so adding a permission here would re-prompt every cold start
+    /// for every user who already granted the seven.
+    private val corePermissions = setOf(
         HealthPermission.getReadPermission(WeightRecord::class),
         HealthPermission.getReadPermission(StepsRecord::class),
         HealthPermission.getReadPermission(ActiveCaloriesBurnedRecord::class),
@@ -47,6 +73,11 @@ class HealthConnectFacade {
         HealthPermission.getReadPermission(HeightRecord::class),
         HealthPermission.getReadPermission(ExerciseSessionRecord::class),
     )
+
+    /// Everything a user-initiated "Connect / Sync now" asks for — body fat
+    /// included, so body-composition import has a permission to stand on.
+    private val readPermissions = corePermissions +
+        setOf(HealthPermission.getReadPermission(BodyFatRecord::class))
 
     private val context: Context
         get() = skip.foundation.ProcessInfo.processInfo.androidContext
@@ -79,8 +110,17 @@ class HealthConnectFacade {
         }
     }
 
-    /// True when every read permission this app uses is granted.
+    /// True when every permission the background sync needs is granted.
     fun hasAllPermissions(): Boolean = runBlocking {
+        try {
+            client().permissionController.getGrantedPermissions().containsAll(corePermissions)
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    /// True when the full ask — core + body fat — is granted.
+    fun hasAllReadPermissions(): Boolean = runBlocking {
         try {
             client().permissionController.getGrantedPermissions().containsAll(readPermissions)
         } catch (e: Exception) {
@@ -89,8 +129,100 @@ class HealthConnectFacade {
     }
 
     /// Fires the system permission sheet (contract registered in MainActivity).
-    fun requestPermissions() {
-        permissionLauncher?.launch(readPermissions)
+    /// MUST be called on the main thread. Returns false when the launcher was
+    /// never registered — the caller must not then wait for a result that can
+    /// never arrive. The outcome is recovered via `permissionFlowPoll()`.
+    fun requestPermissions(): Boolean {
+        val launcher = permissionLauncher ?: return false
+        permissionFlowGranted = -1
+        permissionFlowStatus = 1
+        launcher.launch(readPermissions)
+        return true
+    }
+
+    /// 0 idle · 1 sheet up · 2 finished.
+    fun permissionFlowPoll(): Int = permissionFlowStatus
+
+    /// Permissions the last sheet granted; -1 when it never ran. Zero after a
+    /// completed flow means the user denied — and once Android marks the
+    /// permission USER_FIXED the sheet auto-dismisses, so the button can never
+    /// work again and the only way out is Health Connect's own settings.
+    fun permissionFlowGrantedCount(): Int = permissionFlowGranted
+
+    /// Open Health Connect where the user can flip our permissions back on —
+    /// the only escape once Android has marked a denial USER_FIXED and stopped
+    /// showing the sheet. Health Connect is a platform component on API 34+ and
+    /// a separate app below it, with different actions and no compile-time
+    /// constant for the platform ones, so this walks a candidate chain from
+    /// most specific (this app's permission page) to a guaranteed-resolvable
+    /// last resort, and takes the first that resolves.
+    fun openHealthConnectSettings(): Boolean {
+        val packageExtra = "android.intent.extra.PACKAGE_NAME"
+        val candidates = listOf(
+            Intent("android.health.connect.action.MANAGE_HEALTH_PERMISSIONS")
+                .putExtra(packageExtra, context.packageName),
+            Intent("androidx.health.connect.action.MANAGE_HEALTH_PERMISSIONS")
+                .putExtra(packageExtra, context.packageName),
+            Intent("android.health.connect.action.HEALTH_HOME_SETTINGS"),
+            // = HealthConnectClient.ACTION_HEALTH_CONNECT_SETTINGS, spelled out:
+            // the androidx constant is a plain string for the pre-34 standalone
+            // app, and hard-coding it keeps this chain free of an API whose
+            // Kotlin name has moved between releases.
+            Intent("androidx.health.connect.action.HEALTH_CONNECT_SETTINGS"),
+            Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                .setData(android.net.Uri.parse("package:" + context.packageName)),
+        )
+        for (intent in candidates) {
+            try {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(intent)
+                return true
+            } catch (e: Exception) {
+                // Unresolvable on this OS version — fall through to the next.
+            }
+        }
+        return false
+    }
+
+    /// Body-fat records in [startMillis, endMillis):
+    /// [{"date":"yyyy-MM-dd","pct":23.4}] — one entry per day, LATEST wins,
+    /// same shape as readWeightsJson. Health Connect's Percentage is already
+    /// 0-100, unlike HealthKit's 0.0-1.0 — do NOT rescale on the Swift side.
+    fun readBodyFatJson(startMillis: Long, endMillis: Long): String = runBlocking {
+        val out = JSONArray()
+        try {
+            val latestPerDay = LinkedHashMap<String, BodyFatRecord>()
+            var pageToken: String? = null
+            do {
+                val response = client().readRecords(
+                    ReadRecordsRequest(
+                        recordType = BodyFatRecord::class,
+                        timeRangeFilter = TimeRangeFilter.between(
+                            Instant.ofEpochMilli(startMillis), Instant.ofEpochMilli(endMillis)
+                        ),
+                        pageToken = pageToken,
+                    )
+                )
+                for (record in response.records) {
+                    val day = dayString(record.time)
+                    val existing = latestPerDay[day]
+                    if (existing == null || record.time.isAfter(existing.time)) {
+                        latestPerDay[day] = record
+                    }
+                }
+                pageToken = response.pageToken
+            } while (pageToken != null)
+
+            for ((day, record) in latestPerDay) {
+                out.put(JSONObject().apply {
+                    put("date", day)
+                    put("pct", record.percentage.value)
+                })
+            }
+        } catch (e: Exception) {
+            // permission denied / provider missing → empty result, never throw
+        }
+        out.toString()
     }
 
     /// Weight records in [startMillis, endMillis):
@@ -308,6 +440,24 @@ class HealthConnectFacade {
                 time = Instant.ofEpochMilli(epochMillis),
                 zoneOffset = null,
                 weight = androidx.health.connect.client.units.Mass.kilograms(kg),
+                metadata = androidx.health.connect.client.records.metadata.Metadata.manualEntry(),
+            )
+            client().insertRecords(listOf(record))
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    /// DEBUG/e2e only: seed a body-fat record so the body-composition import
+    /// can be verified on an emulator. Needs WRITE_BODY_FAT (debug manifest
+    /// overlay only) — release throws SecurityException and returns false.
+    fun debugSeedBodyFat(pct: Double, epochMillis: Long): Boolean = runBlocking {
+        try {
+            val record = BodyFatRecord(
+                time = Instant.ofEpochMilli(epochMillis),
+                zoneOffset = null,
+                percentage = androidx.health.connect.client.units.Percentage(pct),
                 metadata = androidx.health.connect.client.records.metadata.Metadata.manualEntry(),
             )
             client().insertRecords(listOf(record))
