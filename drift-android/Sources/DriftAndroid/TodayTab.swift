@@ -297,8 +297,6 @@ struct TodayTab: View {
 
                     intakeCard
 
-                    dailyAverageCard
-
                     // Coach, clients & friends — thin pills, matching iOS.
                     // Each pill pushes onto the enclosing NavigationStack: a
                     // bare sheet would give SharingView's internal
@@ -313,10 +311,18 @@ struct TodayTab: View {
                     statTrio
 
                     // iOS puts the coaching nudge immediately after the body-
-                    // summary trio and the Insights section last on the tab
-                    // (DashboardView:228-284); this keeps both adjacencies
-                    // against Android's own card order.
+                    // summary trio, then goalCard -> tdeeCard, and the Insights
+                    // section last on the tab (DashboardView:228-294); this
+                    // keeps all three adjacencies against Android's own card
+                    // order. Daily Average IS iOS's tdeeCard, so it belongs
+                    // down here after the nudge — goalCard between them is
+                    // unported (#1117), which collapses the adjacency to
+                    // nudge -> dailyAverage -> insights. Hoisting it to slot 4
+                    // pushed the four log chips and TODAY'S MEALS below the
+                    // fold on first paint (#1225).
                     nudgeCard
+
+                    dailyAverageCard
 
                     insightsSection
                 }
