@@ -125,9 +125,7 @@ struct SharingView: View {
                 Text("@").font(.headline).foregroundStyle(Theme.textSecondary)
                 TextField("username", text: $username)
                     .textFieldStyle(.roundedBorder)
-                    #if !os(Android)
                     .textInputAutocapitalization(.never)
-                    #endif
                     .autocorrectionDisabled()
             }
             primaryButton("Claim @\(normalizedUsername.isEmpty ? "username" : normalizedUsername)", busy: busy) {
@@ -569,9 +567,7 @@ struct SharingView: View {
             HStack(spacing: 8) {
                 Image(systemName: sym("magnifyingglass")).foregroundStyle(Theme.textSecondary)
                 TextField("Search @username", text: $searchText)
-                    #if !os(Android)
                     .textInputAutocapitalization(.never)
-                    #endif
                     .autocorrectionDisabled()
                     .onSubmit { Task { await search() } }
                     // Live search as you type (debounced) — don't make the user

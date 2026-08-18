@@ -72,10 +72,8 @@ struct FriendSharePicker: View {
                 .font(.caption).foregroundStyle(Theme.textTertiary)
             TextField("Search people", text: $query)
                 .font(.subheadline)
-                #if !os(Android)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
-                #endif
         }
         .padding(.horizontal, 10).padding(.vertical, 6)
         .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 8))
