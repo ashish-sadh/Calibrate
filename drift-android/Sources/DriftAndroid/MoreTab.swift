@@ -52,26 +52,24 @@ struct MoreTab: View {
                                 .font(.caption).foregroundStyle(Theme.textSecondary)
                         }
 
-                        Toggle(isOn: $usageTelemetry) {
+                        DriftToggle(isOn: $usageTelemetry) {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("Share anonymous usage").font(.subheadline)
                                 Text("Which screens and actions get used — never your food, weight or health data.")
                                     .font(.caption2).foregroundStyle(Theme.textSecondary)
                             }
                         }
-                        .tint(Theme.accent)
                         .onChange(of: usageTelemetry) { _, newValue in
                             Preferences.usageTelemetryEnabled = newValue
                         }
 
-                        Toggle(isOn: $aiCapture) {
+                        DriftToggle(isOn: $aiCapture) {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("Share AI conversations").font(.subheadline)
                                 Text("Uploads what you ask Drift Coach and Describe, plus the reply, so bad answers can be fixed. Off by default.")
                                     .font(.caption2).foregroundStyle(Theme.textSecondary)
                             }
                         }
-                        .tint(Theme.accent)
                         .onChange(of: aiCapture) { _, newValue in
                             Preferences.aiCaptureEnabled = newValue
                         }

@@ -165,6 +165,7 @@
 		ADA6493D219411505EF2DA36 /* Preferences+PhotoLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CFCC1379789784011A217E4 /* Preferences+PhotoLog.swift */; };
 		ADDD7CCA7EA9B8017F76F366 /* FloatingTabBarClearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7920DF1B15D67121A0B8212 /* FloatingTabBarClearance.swift */; };
 		AE471C946CA1823B1985EDA9 /* PipelineE2EEval.swift in Sources */ = {isa = PBXBuildFile; fileRef = A434AE755701CCB89A111516 /* PipelineE2EEval.swift */; };
+		AE481535F6A0506202A79C89 /* DriftToggle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E16AF33DD5CD157CA607F86 /* DriftToggle.swift */; };
 		AF1191CADEE2ADD739D5C9A5 /* TemplatePreviewSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CCE53CD3289EAA4CBDC5F8D /* TemplatePreviewSheet.swift */; };
 		AF45546E02B5118EB9156119 /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA6A530140B729B060F76E94 /* ChatView.swift */; };
 		B2654B50471C75496A1AA0D7 /* NutritionLabelOCR.swift in Sources */ = {isa = PBXBuildFile; fileRef = 418816F51F38F19F65BC3D77 /* NutritionLabelOCR.swift */; };
@@ -387,6 +388,7 @@
 		4C993D1A0F278A3A9A4E02F2 /* ServingMultiplierStepper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServingMultiplierStepper.swift; sourceTree = "<group>"; };
 		4CC80EEA446BCC82FAE612AB /* AIChatView+BackendSelector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AIChatView+BackendSelector.swift"; sourceTree = "<group>"; };
 		4D3E8C8C02CFBE15B569BB71 /* AIBackendCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIBackendCoordinatorTests.swift; sourceTree = "<group>"; };
+		4E16AF33DD5CD157CA607F86 /* DriftToggle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriftToggle.swift; sourceTree = "<group>"; };
 		4EACDB02677C363A05FD0592 /* FoodLogSheetTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodLogSheetTests.swift; sourceTree = "<group>"; };
 		5377D05B6A8B6C76619DFE7F /* ProgressChartsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressChartsView.swift; sourceTree = "<group>"; };
 		54876336F0C254359603DBC4 /* LogMethodCardsRowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogMethodCardsRowTests.swift; sourceTree = "<group>"; };
@@ -636,6 +638,7 @@
 				6B190FDA50ACC7784A35A9A5 /* CoachVoiceShims.swift */,
 				C3F34495B2B51D8B1B73906B /* CreateTemplateView.swift */,
 				BFB4059C65AD94747FA41A1C /* DescribeMealSheet.swift */,
+				4E16AF33DD5CD157CA607F86 /* DriftToggle.swift */,
 				27B67D40BAF0BC47AA2BD1B0 /* EditFoodEntrySheet.swift */,
 				A8811884DA126749C6F9BDDE /* ExerciseBrowserView.swift */,
 				6F11FFEF7FE6BC274423EFB8 /* ExerciseDetailView.swift */,
@@ -1300,6 +1303,7 @@
 				2007C3F2341DA1EB49016893 /* DescribeMealSheet.swift in Sources */,
 				4C31E5F32057829ABAA0840A /* DriftApp.swift in Sources */,
 				30C8DE33B9AC32E9DF686745 /* DriftCoachSheet.swift in Sources */,
+				AE481535F6A0506202A79C89 /* DriftToggle.swift in Sources */,
 				DA9CA09CC6D7266C7E1A7269 /* EditFoodEntrySheet.swift in Sources */,
 				33F3B92CE651EAB7B77BAE1E /* ExerciseBrowserView.swift in Sources */,
 				F9171D74E89BD4878CB6E966 /* ExerciseDetailView.swift in Sources */,

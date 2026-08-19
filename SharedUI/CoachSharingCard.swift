@@ -187,7 +187,7 @@ struct CoachSharingCard: View {
     }
 
     func row(_ label: String, _ option: BriefingSharingLevel) -> some View {
-        Toggle(isOn: Binding(
+        DriftToggle(isOn: Binding(
             get: { level.contains(option) },
             set: { on in
                 if on { level.insert(option) } else { level.remove(option) }
@@ -198,7 +198,6 @@ struct CoachSharingCard: View {
         )) {
             Text(label).font(.subheadline).foregroundStyle(Theme.textPrimary)
         }
-        .tint(Theme.accent)
     }
 
     /// Persist the choice locally FIRST, then push. If the network fails the
@@ -236,13 +235,13 @@ struct CoachSharingCard: View {
     /// distilled briefing. This one governs raw sessions, and they are genuinely
     /// different asks.
     var historyTransferRow: some View {
-        Toggle(isOn: Binding(
+        DriftToggle(isOn: Binding(
             get: { fullHistoryShared },
             set: { on in
                 fullHistoryShared = on
                 Task { await setFullHistory(on) }
             }
-        )) {
+        ), enabled: !historyBusy) {
             VStack(alignment: .leading, spacing: 1) {
                 Text("My full training history").font(.caption)
                 Text(fullHistoryShared
@@ -251,8 +250,6 @@ struct CoachSharingCard: View {
                     .font(.caption2).foregroundStyle(Theme.textTertiary)
             }
         }
-        .tint(Theme.accent)
-        .disabled(historyBusy)
     }
 
     func setFullHistory(_ on: Bool) async {

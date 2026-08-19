@@ -78,21 +78,36 @@ struct LeaderboardsCard: View {
 
     // MARK: - Header + consent
 
+    /// Hoisted out of `header` so both platform branches bind the same thing —
+    /// two copies of a setter that writes a consent flag is two places for it to
+    /// diverge.
+    private var consent: Binding<Bool> {
+        Binding(
+            get: { sharing },
+            set: { on in
+                sharing = on
+                Preferences.shareStatsWithFriends = on
+                Task { await consentChanged(on) }
+            }
+        )
+    }
+
     var header: some View {
         HStack(spacing: 6) {
             Text("LEADERBOARDS").sectionHeading()
             Spacer()
-            Toggle("", isOn: Binding(
-                get: { sharing },
-                set: { on in
-                    sharing = on
-                    Preferences.shareStatsWithFriends = on
-                    Task { await consentChanged(on) }
-                }
-            ))
-            .labelsHidden()
-            .tint(Theme.accent)
-            .disabled(busy)
+            // Not `DriftToggle`: this is the one labelless switch in the app,
+            // and routing it through the wrapper would drop `.labelsHidden()`
+            // and change the iPhone's spacing (`0-IOS-GUARD`). The Android
+            // branch is the same drawn control the wrapper uses.
+            #if os(Android)
+            IOSSwitch(isOn: consent, enabled: !busy)
+            #else
+            Toggle("", isOn: consent)
+                .labelsHidden()
+                .tint(Theme.accent)
+                .disabled(busy)
+            #endif
         }
     }
 

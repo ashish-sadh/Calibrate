@@ -513,7 +513,7 @@ struct SharingView: View {
             }
 
             // The public-profile switch. Off = reachable by your link only.
-            Toggle(isOn: Binding(
+            DriftToggle(isOn: Binding(
                 // Unknown rests at OFF — the non-permissive position — and the
                 // row is disabled until the real value lands, so nobody reads
                 // the placeholder as an answer.
@@ -522,15 +522,13 @@ struct SharingView: View {
                     discoverable = on
                     Task { await run { try await svc.setDiscoverable(on) } }
                 }
-            )) {
+            ), enabled: discoverable != nil) {
                 VStack(alignment: .leading, spacing: 1) {
                     Text("Findable by search").font(.caption)
                     Text(Self.discoverableSubtitle(for: discoverable))
                         .font(.caption2).foregroundStyle(Theme.textTertiary)
                 }
             }
-            .disabled(discoverable == nil)
-            .tint(Theme.accent)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .card()
