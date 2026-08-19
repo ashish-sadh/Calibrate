@@ -224,7 +224,22 @@ struct LeaderboardsCard: View {
             ForEach(Leaderboard.Visibility.allCases, id: \.self) { want in
                 Button { apply(want, to: board) } label: {
                     HStack(spacing: 3) {
+                        // Drawn glyph — skip-ui maps no globe/cloud/wifi of any
+                        // kind, so "Everyone" was the one chip of three showing
+                        // a warning triangle (#1248, directive 0a). `lock.fill`
+                        // and `person.2.fill` stay on their mapped paths.
+                        #if os(Android)
+                        if want == .everyone {
+                            GlobeShape()
+                                .stroke(current == want ? Theme.accent : Theme.textSecondary,
+                                        lineWidth: 1)
+                                .frame(width: 9, height: 9)
+                        } else {
+                            Image(systemName: sym(want.symbol)).font(.system(size: 9))
+                        }
+                        #else
                         Image(systemName: sym(want.symbol)).font(.system(size: 9))
+                        #endif
                         Text(want.label).font(.caption2)
                     }
                     #if os(Android)

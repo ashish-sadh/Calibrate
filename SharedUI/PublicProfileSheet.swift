@@ -256,8 +256,16 @@ struct PublicProfileSheet: View {
             } else {
                 ForEach(activity) { row in
                     HStack(spacing: 8) {
+                        // Drawn glyph — skip-ui maps dumbbell to list.bullet,
+                        // so every activity row read as a BULLET LIST (#1248,
+                        // directive 0a). 11×11 is the caption2 glyph box.
+                        #if os(Android)
+                        DumbbellShape().fill(Theme.textTertiary)
+                            .frame(width: 11, height: 11)
+                        #else
                         Image(systemName: sym("dumbbell.fill"))
                             .font(.caption2).foregroundStyle(Theme.textTertiary)
+                        #endif
                         Text(row.name).font(.caption).foregroundStyle(Theme.textPrimary)
                             .lineLimit(1)
                         Spacer()

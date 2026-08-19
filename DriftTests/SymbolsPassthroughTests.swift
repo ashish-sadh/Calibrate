@@ -25,6 +25,12 @@ struct SymbolsPassthroughTests {
             "arrow.up.circle.fill", "chart.bar.fill",
             "eye", "target", "hourglass",
             "camera", "camera.fill", "doc.viewfinder",
+            // #1248 glyph residue — the clarification-chip names DriftCore's
+            // ClarificationBuilder mints, the activity-row dumbbell, the
+            // leaderboard globe and the client-relationship badge. iOS must
+            // keep every one of these SF names verbatim.
+            "fork.knife", "pills.fill", "scalemass.fill",
+            "dumbbell.fill", "globe", "person.crop.circle.badge.checkmark",
             "not.a.real.symbol",
         ]
         for name in names {

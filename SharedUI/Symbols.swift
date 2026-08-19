@@ -30,6 +30,14 @@ func sym(_ name: String) -> String {
     // light up again the moment the pin is lifted.
     case "chart.line.uptrend.xyaxis": return "chart.bar.xaxis"
     case "scalemass": return "chart.bar.xaxis"
+    // "scalemass.fill" and "pills.fill" are deliberately UNMAPPED. Both reach
+    // the view layer from DriftCore's ClarificationBuilder (the Coach's
+    // lbs/kg and supplement chips) and neither has a Material equivalent —
+    // there is no scale and no capsule in the mapped set, and `scalemass`
+    // above only escapes the triangle when the 1.59 pin lifts. The call site
+    // draws BarChartShape / PillShape via `clarificationGlyph`
+    // (ClarificationCard.swift); a new caller of either name renders the
+    // warning triangle so the gap is caught, not hidden (#1248).
     // "clock" has NO mapping: the calendar stand-in read as a DATE next to
     // the real calendar glyph (#1074). Call sites draw ClockFaceShape
     // (ClockGlyph.swift) behind #if os(Android) instead — a new sym("clock")
@@ -46,7 +54,10 @@ func sym(_ name: String) -> String {
     case "arrow.uturn.backward": return "arrow.left"
     // Material's mapped set has no cloud, globe or wifi glyph of any kind, so
     // the cloud-touchpoint banner on Photo Log (#1111) takes the neutral
-    // informational icon. Deliberately NOT "lock": a padlock beside "your
+    // informational icon. "globe" itself stays deliberately UNMAPPED — it
+    // arrives from DriftCore's `Leaderboard.Visibility.everyone` and the
+    // leaderboard chip draws GlobeShape (GlobeGlyph.swift) instead, because
+    // info.circle beside "Everyone" would say nothing about audience (#1248). Deliberately NOT "lock": a padlock beside "your
     // photo is sent to Drift's cloud AI" reads as a security guarantee we
     // aren't making, and a stand-in that asserts something false is worse
     // than one that is merely approximate.
@@ -120,6 +131,16 @@ func sym(_ name: String) -> String {
     // (#1233/#1244). Rejected: a bare "person", which on PublicProfileSheet
     // would be the THIRD person glyph on one card.
     case "person.badge.plus": return "plus.circle.fill"
+    // The `.client` relationship banner on PublicProfileSheet. skip-ui maps
+    // six person-family names and NONE of them is badged, so the badged name
+    // fell straight through to the warning triangle (#1248). CheckCircle is
+    // mapped and carries the badge's half of the meaning — a CONFIRMED
+    // relationship — while the banner text ("Your client") carries the person
+    // half. Rejected: bare `person.crop.circle.fill`, which would render the
+    // client banner IDENTICAL to the friend banner (person.2.fill maps to the
+    // same glyph above) — the indistinguishable-controls failure scout #26
+    // flagged.
+    case "person.crop.circle.badge.checkmark": return "checkmark.circle.fill"
     // doc.on.doc (copy/duplicate) is unmapped in skip-ui → shipped the ⚠️
     // triangle on Food's "Copy yesterday". Map to the mapped repeat glyph
     // (semantically "copy from a previous day"). Operator directive 0a.
