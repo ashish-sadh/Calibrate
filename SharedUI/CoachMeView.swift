@@ -75,22 +75,29 @@ struct CoachMeView: View {
 
             ScrollViewReader { proxy in
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 10) {
-                        ForEach(messages) { message in
-                            bubble(message)
-                        }
-                        if thinking {
-                            Text("…").font(.title3).foregroundStyle(Theme.textTertiary)
-                        }
-                        if !program.isEmpty {
-                            draftCard
-                        }
-                        Color.clear.frame(height: 1).id("coachBottom")
-                    }
-                    .padding(.horizontal, 16).padding(.vertical, 8)
+                    // Android needs a LAZY stack here or nothing scrolls at all.
+                    // SkipUI's ScrollViewProxy gets its action from whatever
+                    // contributes `ScrollToIDPreferenceKey`, and only the lazy
+                    // containers and List do (LazyVStack.swift:97, List.swift:249)
+                    // — under a plain VStack the proxy reduces to the default
+                    // no-op, so every `scrollTo` here was silently discarded and
+                    // the conversation stayed pinned at offset 0: six turns in,
+                    // the newest reply rendered below the fold while the iPhone
+                    // at the identical state had scrolled it into view (#1197).
+                    // Same shape AIChatView:83 already ships (#1066). iOS keeps
+                    // its eager VStack, so the iPhone is bit-identical.
+                    #if os(Android)
+                    LazyVStack(alignment: .leading, spacing: 10) { conversation }
+                        .padding(.horizontal, 16).padding(.vertical, 8)
+                    #else
+                    VStack(alignment: .leading, spacing: 10) { conversation }
+                        .padding(.horizontal, 16).padding(.vertical, 8)
+                    #endif
                 }
                 // Keep the newest turn in view — tapping a chip used to leave
                 // the conversation parked above the fold (operator 2026-07-29).
+                // `anchor:` is ignored on Fuse by design (ScrollView.swift:163);
+                // reaching the sentinel at all is what matters there.
                 .onChange(of: messages.count) { _, _ in
                     proxy.scrollTo("coachBottom", anchor: .bottom)
                 }
@@ -112,6 +119,22 @@ struct CoachMeView: View {
     }
 
     // MARK: - Chat
+
+    /// The conversation itself, so the two platforms' scroll containers can
+    /// differ without the content being written twice.
+    @ViewBuilder
+    var conversation: some View {
+        ForEach(messages) { message in
+            bubble(message)
+        }
+        if thinking {
+            Text("…").font(.title3).foregroundStyle(Theme.textTertiary)
+        }
+        if !program.isEmpty {
+            draftCard
+        }
+        Color.clear.frame(height: 1).id("coachBottom")
+    }
 
     @ViewBuilder
     func bubble(_ message: Message) -> some View {
