@@ -457,7 +457,15 @@ public enum BehaviorInsightService {
 
     /// Compares calorie intake on days after good sleep (7+ hours) vs poor sleep (<6 hours).
     /// Requires: 7+ days of sleep data paired with food data.
-    private static func sleepVsCaloriesInsight(sleepHistory: [(date: Date, hours: Double)], nutrition: [String: DailyNutrition]) -> BehaviorInsight? {
+    ///
+    /// Internal, not private: this is a pure function of its two arguments, so the
+    /// Tier-0 suite injects `nutrition` directly. Driving it through
+    /// `computeInsights(sleepHistory:)` instead would read the live database, and
+    /// a test written that way only passes while the ambient DB happens to hold no
+    /// food on the dates it picked — which stops being true as the calendar rolls
+    /// (2026-08-19: a rolling -100d window slid into a seeded range and the iOS
+    /// copies of these cases started failing).
+    static func sleepVsCaloriesInsight(sleepHistory: [(date: Date, hours: Double)], nutrition: [String: DailyNutrition]) -> BehaviorInsight? {
         guard sleepHistory.count >= 7 else { return nil }
 
         var goodSleepCals: [Double] = []

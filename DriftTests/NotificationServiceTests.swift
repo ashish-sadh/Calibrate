@@ -124,44 +124,6 @@ final class NotificationServiceTests: XCTestCase {
         XCTAssertFalse(insight.isPositive)
     }
 
-    // MARK: - Sleep Insight Edge Cases (via computeInsights)
-
-    func testSleepInsightRequiresMin7Entries() {
-        let sixEntries = (0..<6).map { i -> (date: Date, hours: Double) in
-            (date: Calendar.current.date(byAdding: .day, value: -i, to: Date())!, hours: i % 2 == 0 ? 8.0 : 5.0)
-        }
-        let insights = BehaviorInsightService.computeInsights(sleepHistory: sixEntries)
-        let hasSleepInsight = insights.contains { $0.icon == "moon.zzz.fill" }
-        XCTAssertFalse(hasSleepInsight, "< 7 sleep entries should produce no sleep insight")
-    }
-
-    func testSleepInsightEmptyHistoryProducesNoInsight() {
-        let insights = BehaviorInsightService.computeInsights(sleepHistory: [])
-        let hasSleepInsight = insights.contains { $0.icon == "moon.zzz.fill" }
-        XCTAssertFalse(hasSleepInsight, "Empty sleep history should produce no sleep insight")
-    }
-
-    func testSleepInsightWith7EntriesButNoCalorieDataProducesNoInsight() {
-        // 7 entries with good/poor mix — but DB has no calorie data for these dates
-        // so goodSleepCals and poorSleepCals stay empty → guard fails → no insight
-        let entries = (0..<7).map { i -> (date: Date, hours: Double) in
-            (date: Calendar.current.date(byAdding: .day, value: -i - 100, to: Date())!, hours: i % 2 == 0 ? 8.0 : 5.0)
-        }
-        let insights = BehaviorInsightService.computeInsights(sleepHistory: entries)
-        let hasSleepInsight = insights.contains { $0.icon == "moon.zzz.fill" }
-        XCTAssertFalse(hasSleepInsight, "No calorie data should produce no sleep insight even with sufficient sleep entries")
-    }
-
-    func testSleepInsightExactly7EntriesAllGoodSleep() {
-        // All good sleep (7h+) → poorSleepCals will be empty → guard fails
-        let entries = (0..<7).map { i -> (date: Date, hours: Double) in
-            (date: Calendar.current.date(byAdding: .day, value: -i - 200, to: Date())!, hours: 8.0)
-        }
-        let insights = BehaviorInsightService.computeInsights(sleepHistory: entries)
-        let hasSleepInsight = insights.contains { $0.icon == "moon.zzz.fill" }
-        XCTAssertFalse(hasSleepInsight, "All-good-sleep entries should produce no sleep insight without poor sleep days")
-    }
-
     // MARK: - Service API Smoke Tests
 
     @MainActor
@@ -194,28 +156,6 @@ final class NotificationServiceTests: XCTestCase {
             XCTAssertFalse(alert.detail.isEmpty, "Alert detail must not be empty")
             XCTAssertFalse(alert.icon.isEmpty, "Alert icon must not be empty")
         }
-    }
-
-    // MARK: - BehaviorInsightService Sleep Edge Cases (additional)
-
-    func testSleepInsightWith7EntriesAllPoorSleep() {
-        // All poor sleep (<6h) — goodSleepCals will be empty → guard fails → no insight
-        let entries = (0..<7).map { i -> (date: Date, hours: Double) in
-            (date: Calendar.current.date(byAdding: .day, value: -i - 300, to: Date())!, hours: 5.0)
-        }
-        let insights = BehaviorInsightService.computeInsights(sleepHistory: entries)
-        let hasSleepInsight = insights.contains { $0.icon == "moon.zzz.fill" }
-        XCTAssertFalse(hasSleepInsight, "All-poor-sleep without good-sleep days should produce no sleep insight")
-    }
-
-    func testSleepInsightExactly6Hours_isNotGoodOrPoor() {
-        // 6.0h is the boundary: not good (≥7), not poor (<6) — should produce no insight
-        let entries = (0..<8).map { i -> (date: Date, hours: Double) in
-            (date: Calendar.current.date(byAdding: .day, value: -i - 400, to: Date())!, hours: 6.0)
-        }
-        let insights = BehaviorInsightService.computeInsights(sleepHistory: entries)
-        let hasSleepInsight = insights.contains { $0.icon == "moon.zzz.fill" }
-        XCTAssertFalse(hasSleepInsight, "Exactly 6h sleep is neither good nor poor, produces no insight")
     }
 
     // MARK: - NotificationService Composition Edge Cases
